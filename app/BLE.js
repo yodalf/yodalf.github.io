@@ -32,9 +32,9 @@ async function BLEManager()
         buf = await idCar.readValue();
         console.log(buf);
 
-        buf[0] = 1;
+        let xx = Uint8Array.of(1); 
 
-        await idCar.writeValue(buf);
+        await idCar.writeValue(xx);
         
         buf = await idCar.readValue();
         console.log(buf);
