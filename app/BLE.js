@@ -4,6 +4,16 @@ const connectionStatus = document.getElementById("connectionStatus");
 
 connectButton.addEventListener("click", BLEManager);
 
+function idCarValueChanged(event)
+{
+    const value = event.target.value;
+
+    console.log(value);
+
+    return value;
+}
+
+
 async function BLEManager()
 {
 
@@ -29,15 +39,21 @@ async function BLEManager()
         const idCar = await idService.getCharacteristic("00aabbbb-0001-0001-0001-000000000004");
         console.log("Characteristic: ", idCar);
 
+        let xx = Uint8Array.of(1); 
+        
         buf = await idCar.readValue();
         console.log(buf);
-
-        let xx = Uint8Array.of(1); 
 
         await idCar.writeValue(xx);
         
         buf = await idCar.readValue();
         console.log(buf);
+
+        idCar.addEventListener('characteristicvaluechanged', idCarValueChanged);
+
+        await idCar.startNotifications();
+
+
 
         await device.gatt.disconnect();
 
