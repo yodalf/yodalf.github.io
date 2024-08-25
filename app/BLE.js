@@ -29,6 +29,11 @@ async function BLEManager()
         const idCa = await idService.getCharacteristic("00aabbbb-0001-0001-0001-000000000001");
         console.log("Characteristic: ", idCa);
 
+        const buf = idCal.readValue();
+        console.log(buf);
+
+        device.gatt.disconnect();
+
     }
     catch {
         connectionStatus.textContent = "CANCELLED";  
