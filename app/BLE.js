@@ -13,13 +13,14 @@ async function BLEManager()
         const device = await navigator.bluetooth.requestDevice( { 
             filters: [ {
                 namePrefix: 'Hello',
-                services: ["00AABBBB-0000-0000-0000-000000000001"]
+                services: ['00AABBBB-0000-0000-0000-000000000001']
             } ] } );
+        
         const connectedDevice = await device.gatt.connect();
         connectionStatus.textContent = "CONNECTED";
 
-        const fileService = await connectedDevice.getPrimaryService( "00AABBBB-0000-0000-0000-000000000001" );
-        console.log(fileService);
+        //const fileService = await connectedDevice.getPrimaryService( '00AABBBB-0000-0000-0000-000000000001' );
+        //console.log(fileService);
     }
     catch {
         connectionStatus.textContent = "CANCELLED";
