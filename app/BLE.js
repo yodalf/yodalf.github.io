@@ -27,6 +27,7 @@ async function BLEManager()
         console.log("Service: ", idService.uuid);
 
         const idCa = await fileService.getCharacteristic("00aabbbb-0001-0001-0001-000000000001");
+        console.log("Characteristic: ", idCa);
 
     }
     catch {
