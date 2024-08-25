@@ -7,7 +7,9 @@ connectButton.addEventListener("click", BLEManager);
 async function BLEManager()
 {
 
-    const device = await navigator.bluetooth.requestDevice( { acceptAllDevices:true } );
+    //const device = await navigator.bluetooth.requestDevice( { acceptAllDevices:true } );
+    const device = await navigator.bluetooth.requestDevice( { filters: [ {namePrefix: 'Hello'} ] } );
+
 
 }
 
