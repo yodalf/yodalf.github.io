@@ -42,9 +42,8 @@ async function BLEManager()
         await device.gatt.disconnect();
 
     }
-    catch {
-        await device.gatt.disconnect();
-        connectionStatus.textContent = "CANCELLED";  
+    catch(error) {
+        connectionStatus.textContent = "CANCELLED "+error;  
     };
 
 }
