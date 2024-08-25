@@ -63,11 +63,11 @@ async function BLEManager()
         device = await navigator.bluetooth.requestDevice(options)
             .catch((error) => { console.error(`ERR: ${error}`); connectionStatus.textContent = "CANCELLED"; } );
        
-        device.addEventListener('gattserverdisconnected', serviceDisconnected);
 
         const connectedDevice = await device.gatt.connect();
         connectionStatus.textContent = "Connected!";  
         connectButton.textContent = "Disconnect";
+        device.addEventListener('gattserverdisconnected', serviceDisconnected);
 
         const idService = await connectedDevice.getPrimaryService( "00aabbbb-0001-0000-0001-000000000001" );
         console.log("Service: ", idService.uuid);
