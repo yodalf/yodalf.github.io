@@ -36,6 +36,7 @@ async function BLEManager()
 
     }
     catch {
+        await device.gatt.disconnect();
         connectionStatus.textContent = "CANCELLED";  
     };
 
