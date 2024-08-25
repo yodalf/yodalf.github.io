@@ -11,19 +11,25 @@ async function BLEManager()
 
     try {
          let options = {
-          filters: [
-            { services: ["00AABBBB-0001-0001-0001-000000000001"] },
-            { namePrefix: "Hello" },
-          ],
-          optionalServices: ["00AABBBB-0001-0001-0001-000000000001"],
+            filters: [
+                { services: ["00AABBBB-0001-0001-0001-000000000001"] },
+                { namePrefix: "Hello" },
+            ],
+            optionalServices: ["00AABBBB-0001-0001-0001-000000000001"],
         };
-        const device = await navigator.bluetooth.requestDevice( options );
+        navigator.bluetooth
+                                .requestDevice(options)
+                                .then( (device) => { 
+                                    console.log(`Name: ${device.name}`);
+                                    connectionStatus.textContent = "CONNECTED";
+                                    //
+                                })
+                                .catch((error) => console.error(`ERR: ${error}`)) ;
         
-        const connectedDevice = await device.gatt.connect();
-        connectionStatus.textContent = "CONNECTED";
+        //const connectedDevice = await device.gatt.connect();
 
-        const fileService = await connectedDevice.getPrimaryService( '00AABBBB-0000-0000-0000-000000000001' );
-        console.log(fileService);
+        //const fileService = await connectedDevice.getPrimaryService( '00AABBBB-0000-0000-0000-000000000001' );
+        //console.log(fileService);
     }
     catch {
         connectionStatus.textContent = "CANCELLED";
