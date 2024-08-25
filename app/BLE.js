@@ -53,7 +53,7 @@ async function BLEManager()
     try {
          let options = {
             filters: [
-                //{ services: ["00aabbbb-0001-0000-0001-000000000001"] },
+                { services: ["00aabbbb-0001-0000-0001-000000000001"] },
                 { namePrefix: "Hello" },
             ],
         };
