@@ -34,7 +34,7 @@ async function BLEManager()
 
         buf[0] = 1;
 
-        idCar.writeValue(buf);
+        await idCar.writeValue(buf);
         
         buf = await idCar.readValue();
         console.log(buf);
