@@ -15,7 +15,7 @@ async function BLEManager()
                 //namePrefix: 'Hello',
                 services : [ '00AABBBB-0001-0001-0001-000000000001' ],
                 optionalServices : [ '00AABBBB-0001-0001-0001-000000000001' ],
-                serviceData: [ { service: '00AABBBB-0001-0001-0001-000000000001' }]
+                //serviceData: [ { service: '00AABBBB-0001-0001-0001-000000000001' }]
             } ] } );
         
         const connectedDevice = await device.gatt.connect();
