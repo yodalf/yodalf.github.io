@@ -12,7 +12,7 @@ async function BLEManager()
     try {
          let options = {
             filters: [
-                { services: ["00aabbbb-0001-0001-0001-000000000001"] },
+                { services: ["00aabbbb-0000-0001-0001-000000000001"] },
                 { namePrefix: "Hello" },
             ],
             //optionalServices: ["00aabbbb-0001-0001-0001-000000000001"],
@@ -23,8 +23,11 @@ async function BLEManager()
         const connectedDevice = await device.gatt.connect();
         connectionStatus.textContent = "Connected!";  
 
-        const fileService = await connectedDevice.getPrimaryService( "00aabbbb-0001-0001-0001-000000000001" );
-        console.log("Service: ", fileService.uuid);
+        const idService = await connectedDevice.getPrimaryService( "00aabbbb-0000-0001-0001-000000000001" );
+        console.log("Service: ", idService.uuid);
+
+        const idCa = await fileService.getCharacteristic("00aabbbb-0001-0001-0001-000000000001");
+
     }
     catch {
         connectionStatus.textContent = "CANCELLED";  
