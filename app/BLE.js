@@ -23,8 +23,8 @@ function serviceDisconnected(event)
     const device = event.target;
 
     console.log(`Device ${device.name} is disconnected.`);
-    connectionStatus.textCOntent = "IDLE";
-    connectButton.textCOntent = "Connect";
+    connectionStatus.textContent = "IDLE";
+    connectButton.textContent = "Connect";
 }
 
 
