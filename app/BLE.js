@@ -60,7 +60,7 @@ async function BLEManager()
 
 
 
-        await device.gatt.disconnect();
+        //await device.gatt.disconnect();
 
     }
     catch(error) {
