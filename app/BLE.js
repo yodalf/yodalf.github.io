@@ -10,13 +10,14 @@ async function BLEManager()
     connectionStatus.textContent = "...";
 
     try {
-        const device = await navigator.bluetooth.requestDevice( { 
-            filters: [ 
-                { namePrefix: 'Hello' } ,
-                { services : [ '00AABBBB-0001-0001-0001-000000000001' ] } ,
-                //{ optionalServices : [ '00AABBBB-0001-0001-0001-000000000001' ] } ,
-                //serviceData: [ { service: '00AABBBB-0001-0001-0001-000000000001' }]
-             ] } );
+         let options = {
+          filters: [
+            { services: ["00AABBBB-0001-0001-0001-000000000001"] },
+            { namePrefix: "Hello" },
+          ],
+          optionalServices: ["00AABBBB-0001-0001-0001-000000000001"],
+        };
+        const device = await navigator.bluetooth.requestDevice( options );
         
         const connectedDevice = await device.gatt.connect();
         connectionStatus.textContent = "CONNECTED";
