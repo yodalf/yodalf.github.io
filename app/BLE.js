@@ -12,10 +12,10 @@ async function BLEManager()
     try {
          let options = {
             filters: [
-                { services: ["00AABBBB-0001-0001-0001-000000000001"] },
+                { services: ["00aabbbb-0001-0001-0001-000000000001"] },
                 { namePrefix: "Hello" },
             ],
-            optionalServices: ["00AABBBB-0001-0001-0001-000000000001"],
+            optionalServices: ["00aabbbb-0001-0001-0001-000000000001"],
         };
         navigator.bluetooth
                                 .requestDevice(options)
