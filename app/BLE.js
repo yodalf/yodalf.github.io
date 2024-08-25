@@ -41,17 +41,18 @@ async function BLEManager()
 
         let xx = Uint8Array.of(1); 
         
-        buf = await idCar.readValue();
-        console.log(buf);
+        //buf = await idCar.readValue();
+        //console.log(buf);
+
+        
+        idCar.addEventListener('characteristicvaluechanged', idCarValueChanged);
+        await idCar.startNotifications();
 
         await idCar.writeValue(xx);
         
-        buf = await idCar.readValue();
-        console.log(buf);
+        //buf = await idCar.readValue();
+        //console.log(buf);
 
-        idCar.addEventListener('characteristicvaluechanged', idCarValueChanged);
-
-        await idCar.startNotifications();
 
 
 
