@@ -10,7 +10,7 @@ function idCarValueChanged(event)
 
     console.log(value);
     
-    buf = await idCar.readValue();
+    buf = idCar.readValue();
     console.log(buf);
 
     return value;
