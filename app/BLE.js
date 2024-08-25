@@ -15,9 +15,9 @@ async function BLEManager()
                 { services: ["00aabbbb-0001-0001-0001-000000000001"] },
                 { namePrefix: "Hello" },
             ],
-            optionalServices: ["00aabbbb-0001-0001-0001-000000000001"],
+            //optionalServices: ["00aabbbb-0001-0001-0001-000000000001"],
         };
-        navigator.bluetooth
+        await navigator.bluetooth
                                 .requestDevice(options)
                                 .then( (device) => { 
                                     console.log(`Name: ${device.name}`);
@@ -26,10 +26,10 @@ async function BLEManager()
                                 })
                                 .catch((error) => console.error(`ERR: ${error}`)) ;
         
-        //const connectedDevice = await device.gatt.connect();
+        const connectedDevice = await device.gatt.connect();
 
-        //const fileService = await connectedDevice.getPrimaryService( '00AABBBB-0000-0000-0000-000000000001' );
-        //console.log(fileService);
+        const fileService = await connectedDevice.getPrimaryService( "00aabbbb-0001-0001-0001-000000000001" );
+        console.log(fileService);
     }
     catch {
         connectionStatus.textContent = "CANCELLED";
