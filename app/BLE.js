@@ -26,7 +26,7 @@ async function BLEManager()
         const idService = await connectedDevice.getPrimaryService( "00aabbbb-0001-0000-0001-000000000001" );
         console.log("Service: ", idService.uuid);
 
-        const idCa = await fileService.getCharacteristic("00aabbbb-0001-0001-0001-000000000001");
+        const idCa = await idService.getCharacteristic("00aabbbb-0001-0001-0001-000000000001");
         console.log("Characteristic: ", idCa);
 
     }
