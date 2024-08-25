@@ -18,7 +18,7 @@ async function BLEManager()
         const connectedDevice = await device.gatt.connect();
         connectionStatus.textContent = "CONNECTED";
 
-        const fileService = await connectedDevice.getPrimaryService( "0x00AABBBB-0000-0000-0000-000000000001" );
+        const fileService = await connectedDevice.getPrimaryService( "00AABBBB-0000-0000-0000-000000000001" );
         console.log(fileService);
     }
     catch {
