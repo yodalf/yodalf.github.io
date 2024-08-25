@@ -11,6 +11,8 @@ async function BLEManager()
 
     try {
         const device = await navigator.bluetooth.requestDevice( { filters: [ {namePrefix: 'Hello'} ] } );
+        const connectedDevice = await device.gatt.connect();
+        connectionStatus.textContent = "CONNECTED";
     }
     catch {
         connectionStatus = "CANCELLED";
