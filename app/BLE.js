@@ -11,6 +11,7 @@ function idCarValueChanged(event)
     console.log(value);
     
     buf = idCar.readValue();
+    console.log("*** HELLO!");
     console.log(buf);
 
     return value;
