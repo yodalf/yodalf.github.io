@@ -29,10 +29,10 @@ async function BLEManager()
         const idCar = await idService.getCharacteristic("00aabbbb-0001-0001-0001-000000000001");
         console.log("Characteristic: ", idCar);
 
-        const buf = idCar.readValue();
+        const buf = await idCar.readValue();
         console.log(buf);
 
-        device.gatt.disconnect();
+        await device.gatt.disconnect();
 
     }
     catch {
