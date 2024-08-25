@@ -26,7 +26,7 @@ async function BLEManager()
         const idService = await connectedDevice.getPrimaryService( "00aabbbb-0001-0000-0001-000000000001" );
         console.log("Service: ", idService.uuid);
 
-        const idCar = await idService.getCharacteristic("00aabbbb-0001-0001-0001-000000000004");
+        const idCar = await idService.getCharacteristic("00aabbbb-0001-0010-0001-000000000004");
         console.log("Characteristic: ", idCar);
 
         const buf = await idCar.readValue();
