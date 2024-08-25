@@ -21,9 +21,10 @@ async function BLEManager()
             .catch((error) => { console.error(`ERR: ${error}`); connectionStatus.textContent = "CANCELLED"; } );
         
         const connectedDevice = await device.gatt.connect();
+        connectionStatus.textContent = "Connected!";  
 
         const fileService = await connectedDevice.getPrimaryService( "00aabbbb-0001-0001-0001-000000000001" );
-        console.log(fileService);
+        console.log("Service: ", fileService.uuid);
     }
     catch {
         connectionStatus.textContent = "CANCELLED";  
