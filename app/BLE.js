@@ -17,14 +17,17 @@ async function BLEManager()
             ],
             //optionalServices: ["00aabbbb-0001-0001-0001-000000000001"],
         };
-        const device = await navigator.bluetooth.requestDevice(options);
+        const device = await navigator.bluetooth.requestDevice(options)
+            .catch((error) => { console.error(`ERR: ${error}`); connectionStatus.textContent = "CANCELLED"; } );
         
         const connectedDevice = await device.gatt.connect();
 
         const fileService = await connectedDevice.getPrimaryService( "00aabbbb-0001-0001-0001-000000000001" );
         console.log(fileService);
     }
-    catch((error) => { console.error(`ERR: ${error}`); connectionStatus.textContent = "CANCELLED"; } ) ;
+    catch {
+        connectionStatus.textContent = "CANCELLED";  
+    };
 
 }
 
