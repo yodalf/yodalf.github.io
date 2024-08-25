@@ -2,7 +2,10 @@ const connectButton = document.getElementById("controlButton");
 const deviceName = document.getElementById("deviceNameInput");
 const connectionStatus = document.getElementById("connectionStatus");
 
-connectButton.addEventListener("click", BLEManager);
+connectButton.addEventListener("click", BLEConnectionHandler);
+
+
+var device;
 
 function idCarValueChanged(event)
 {
@@ -21,7 +24,26 @@ function serviceDisconnected(event)
 
     console.log(`Device ${device.name} is disconnected.`);
     connectionStatus.textCOntent = "IDLE";
+    connectButton.textCOntent = "Connect";
 }
+
+
+async function BLEConnectionHandler()
+{
+    if (device) {
+        if (device.gatt.connected) {
+            device.gatt.disconnect();
+        }
+        else
+        {
+            BLEManager();
+        }
+    }
+    else {
+        BLEManager();
+    }
+}
+
 
 async function BLEManager()
 {
@@ -38,13 +60,14 @@ async function BLEManager()
         };
         
 
-        const device = await navigator.bluetooth.requestDevice(options)
+        device = await navigator.bluetooth.requestDevice(options)
             .catch((error) => { console.error(`ERR: ${error}`); connectionStatus.textContent = "CANCELLED"; } );
        
         device.addEventListener('gattserverdisconnected', serviceDisconnected);
 
         const connectedDevice = await device.gatt.connect();
         connectionStatus.textContent = "Connected!";  
+        connectButton.textContent = "Disconnect";
 
         const idService = await connectedDevice.getPrimaryService( "00aabbbb-0001-0000-0001-000000000001" );
         console.log("Service: ", idService.uuid);
