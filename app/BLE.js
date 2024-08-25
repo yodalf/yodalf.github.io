@@ -8,12 +8,9 @@ function idCarValueChanged(event)
 {
     const value = event.target.value;
 
+    console.log("*** HELLO!");
     console.log(value);
     
-    buf = idCar.readValue();
-    console.log("*** HELLO!");
-    console.log(buf);
-
     return value;
 }
 
