@@ -13,7 +13,7 @@ async function BLEManager()
         const device = await navigator.bluetooth.requestDevice( { 
             filters: [ {
                 //namePrefix: 'Hello',
-                services: ['00AABBBB-0001-0001-0001-000000000001']
+                serviceData: [ { service: '00AABBBB-0001-0001-0001-000000000001' }]
             } ] } );
         
         const connectedDevice = await device.gatt.connect();
