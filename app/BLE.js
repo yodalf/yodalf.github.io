@@ -15,6 +15,14 @@ function idCarValueChanged(event)
 }
 
 
+function serviceDisconnected(event)
+{
+    const device = event.target;
+
+    console.log(`Device ${device.name} is disconnected.`);
+    connectionStatus.textCOntent = "IDLE";
+}
+
 async function BLEManager()
 {
 
@@ -28,9 +36,13 @@ async function BLEManager()
             ],
             //optionalServices: ["00aabbbb-0001-0001-0001-000000000001"],
         };
+        
+
         const device = await navigator.bluetooth.requestDevice(options)
             .catch((error) => { console.error(`ERR: ${error}`); connectionStatus.textContent = "CANCELLED"; } );
-        
+       
+        device.addEventListener('gattserverdisconnected', serviceDisconnected);
+
         const connectedDevice = await device.gatt.connect();
         connectionStatus.textContent = "Connected!";  
 
