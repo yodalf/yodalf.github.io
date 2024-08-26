@@ -32,7 +32,7 @@ async function BLEConnectionHandler()
 {
     if (device) {
         if (device.gatt.connected) {
-            device.gatt.disconnect();
+            //device.gatt.disconnect();
             device.gatt.forget();
         }
         else
