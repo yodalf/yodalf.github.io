@@ -54,8 +54,8 @@ async function BLEManager()
          let options = {
              //acceptAllDevices: true,
              filters: [
+                 { name: "Hello World" },
                  { services: ["00aabbbb-0001-0000-0001-000000000001"] },
-             //    { namePrefix: "Hello" },
             ],
         };
         
