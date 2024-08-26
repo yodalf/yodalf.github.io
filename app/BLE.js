@@ -52,11 +52,11 @@ async function BLEManager()
 
     try {
          let options = {
-             //acceptAllDevices: true,
-             filters: [
-                 { namePrefix: "Hello" },
-                 { services: ["00aabbbb-0001-0000-0001-000000000001"] },
-            ],
+             acceptAllDevices: true,
+             //filters: [
+             //    { namePrefix: "Hello" },
+             //    { services: ["00aabbbb-0001-0000-0001-000000000001"] },
+            //],
         };
         
 
