@@ -4,6 +4,7 @@ const deviceName = document.getElementById("deviceNameInput");
 const connectionStatus = document.getElementById("connectionStatus");
 
 connectButton.addEventListener("click", BLEConnectionHandler);
+idButton.addEventListener("click", BLEidHandler);
 
 
 var device;
@@ -47,6 +48,20 @@ async function BLEConnectionHandler()
     }
 }
 
+async function BLEidHandler()
+{
+    if (!device) {
+        return;
+    }
+    else {
+        BLEidManager();
+    }
+}
+
+async function BLEidManager()
+{
+`   console.log("ID!");
+}
 
 async function BLEManager()
 {
