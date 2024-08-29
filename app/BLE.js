@@ -51,6 +51,7 @@ async function BLEConnectionHandler()
 async function BLEidHandler()
 {
     if (!device) {
+        console.log("NO DEVICE!");
         return;
     }
     else {
