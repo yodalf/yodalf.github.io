@@ -24,9 +24,10 @@ function idCarValueChanged(event)
 
 function serviceDisconnected(event)
 {
-    const device = event.target;
+    const tgt = event.target;
 
-    console.log(`Device ${device.name} is disconnected.`);
+    device = null;
+    console.log(`Device ${tgt.name} is disconnected.`);
     connectionStatus.textContent = "IDLE";
     connectButton.textContent = "Connect";
 }
