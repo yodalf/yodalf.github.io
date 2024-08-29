@@ -97,7 +97,7 @@ async function BLEManager()
         const idCar = await idService.getCharacteristic("00aabbbb-0001-0001-0001-000000000004");
         console.log("Characteristic: ", idCar);
 
-        //let xx = Uint8Array.of(1); 
+        let xx = Uint8Array.of(1); 
         
         //buf = await idCar.readValue();
         //console.log(buf);
@@ -106,8 +106,7 @@ async function BLEManager()
         idCar.addEventListener('characteristicvaluechanged', idCarValueChanged);
         await idCar.startNotifications();
 
-        //await idCar.writeValue(xx);
-        buf = await readObject(idCar, 1);
+        await idCar.writeValue(xx);
         
 
         //buf = await idCar.readValue();
