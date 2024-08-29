@@ -60,7 +60,7 @@ async function BLEidHandler()
 
 async function BLEidManager()
 {
-`   console.log("ID!");
+    console.log("ID!");
 }
 
 async function BLEManager()
