@@ -5,7 +5,7 @@ var connectedDevice;
 var idChar = null;;
 var provState = 0;
 var provBuf = null;
-dec = new textDecoder();
+dec = new TextDecoder();
 //}}}
 
 //{{{  Connect UI to our functions
