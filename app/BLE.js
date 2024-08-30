@@ -2,7 +2,7 @@
 //{{{  Globals
 var device;
 var connectedDevice;
-var idCharac;
+var idChar = null;;
 var provState = 0;
 var provBuf = null;
 //}}}
@@ -118,16 +118,16 @@ async function provManager() //{{{
         const idService = await connectedDevice.getPrimaryService( "00aabbbb-0001-0000-0001-000000000001" );
         console.log("Service: ", idService.uuid);
 
-        const idCar = await idService.getCharacteristic("00aabbbb-0001-0001-0001-000000000004");
-        console.log("Characteristic: ", idCar);
+        idChar = await idService.getCharacteristic("00aabbbb-0001-0001-0001-000000000004");
+        console.log("Characteristic: ", idChar);
 
         // Prep our notification handler
-        idCar.addEventListener('characteristicvaluechanged', provValueChanged);
-        await idCar.startNotifications();
+        idChar.addEventListener('characteristicvaluechanged', provValueChanged);
+        await idChar.startNotifications();
         
         // Send a '1' request    
         let xx = Uint8Array.of(1); 
-        await idCar.writeValue(xx);
+        await idChar.writeValue(xx);
         
         provStatus.textContent = "1";  
 
@@ -173,19 +173,28 @@ function provValueChanged(event) //{{{
         console.log("ERROR! provState is 0... ");
     }  else if (provState == 1)
     {
-         b = new Uint8Array(value.buffer); 
+        let b = new Uint8Array(value.buffer); 
         if (b[0] == 0x12)
         {
             dec = new TextDecoder();
             provBuf = dec.decode(b.slice(3,3+b[1]));
-        }
-        else
+        
+            // Send a '1' request    
+            let xx = Uint8Array.of(0x10); 
+            idChar.writeValue(xx);
+            provStatus.textContent = "1";  
+
+        } else if (b[0] == 0x80)
         {
-            provBuf=null;
+            // The end
+            provState = 0;
         }
-    } else
+
+    }  
+       else
     {
         console.log("TBC...");
+        provBuf=null;
     }
 }
 //}}}
