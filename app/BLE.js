@@ -107,33 +107,28 @@ async function provManager() //{{{
     {
         if ( provState == 0)
         {
+
+        // We start a new ID check
         console.log ("Start Prov");
         provState = 1;
-        
+
+
+        // COnnect to uur service and characteristic
         const idService = await connectedDevice.getPrimaryService( "00aabbbb-0001-0000-0001-000000000001" );
         console.log("Service: ", idService.uuid);
 
         const idCar = await idService.getCharacteristic("00aabbbb-0001-0001-0001-000000000004");
         console.log("Characteristic: ", idCar);
 
-        let xx = Uint8Array.of(1); 
-        
-        //buf = await idCar.readValue();
-        //console.log(buf);
-
-        
+        // Prep our notification handler
         idCar.addEventListener('characteristicvaluechanged', idCarValueChanged);
         await idCar.startNotifications();
-
+        
+        // Send a '1' request    
+        let xx = Uint8Array.of(1); 
         await idCar.writeValue(xx);
         
-
-        //buf = await idCar.readValue();
-        //console.log(buf);
-
-        provStatus.textContent = "OK";  
-
-
+        provStatus.textContent = "1";  
 
         //await device.gatt.disconnect();
         }
@@ -156,6 +151,8 @@ function serviceDisconnect(event) //{{{
 
     device = null;
     connectedDevice = null;
+    provState = 0;
+
     console.log(`Device ${tgt.name} is disconnected.`);
     connectionStatus.textContent = "IDLE";
     connectButton.textContent = "Connect";
@@ -165,10 +162,16 @@ function idCarValueChanged(event) //{{{
 {
     const value = event.target.value;
 
-    console.log("*** HELLO!");
-    console.log(value);
-    
-    return value;
+    if (provState == 0)
+    {
+        console.log("ERROR! provState is 0... ");
+    }  else if (provState == 1)
+    {
+        console.log("*** HELLO! value is "+value);
+    } else
+    {
+        console.log("TBC...");
+    }
 }
 //}}}
 
