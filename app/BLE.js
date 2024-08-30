@@ -152,6 +152,7 @@ function serviceDisconnect(event) //{{{
     device = null;
     connectedDevice = null;
     provState = 0;
+    provStatus.textContent = "...";  
 
     console.log(`Device ${tgt.name} is disconnected.`);
     connectionStatus.textContent = "IDLE";
