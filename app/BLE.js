@@ -192,6 +192,10 @@ function provValueChanged(event) //{{{
         {
             // The end
             provState = 0;
+            provStatus.textContent = "CSR Ready";  
+
+            // provBuf contains a CSR . Build string to send to auth server
+            console.log(provBuf);            
         }
 
     }  
