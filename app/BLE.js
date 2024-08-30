@@ -172,10 +172,15 @@ function provValueChanged(event) //{{{
         console.log("ERROR! provState is 0... ");
     }  else if (provState == 1)
     {
-        console.log("*** HELLO! value is "+value);
-    
-        provBuf = new Uint8Array(value.buffer); 
-
+         b = new Uint8Array(value.buffer); 
+        if (b[0] == 0x12)
+        {
+            provBuf=provBuf+b.slice(3,3+b[1]);
+        }
+        else
+        {
+            provBuf=null;
+        }
     } else
     {
         console.log("TBC...");
