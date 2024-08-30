@@ -5,6 +5,7 @@ var connectedDevice;
 var idChar = null;;
 var provState = 0;
 var provBuf = null;
+dec = new textDecoder();
 //}}}
 
 //{{{  Connect UI to our functions
@@ -176,7 +177,7 @@ async function sendPEMtoServer(url, pemData) { //{{{
     console.log('Certificate sent successfully!');
 
     const x = await response.arrayBuffer();
-    console.log(x);
+    console.log(dec.decode(x));
 
     return response;
   } catch (error) {
@@ -214,7 +215,6 @@ function provValueChanged(event) //{{{
         let b = new Uint8Array(value.buffer); 
         if ((b[0] & 0xf0)  == 0x10)
         {
-            dec = new TextDecoder();
             if( (b[0] & 0x0f) != 0x00) 
                 provBuf = dec.decode(b.slice(3,3+b[1]));
             else
