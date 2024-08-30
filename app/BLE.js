@@ -3,8 +3,8 @@
 var device;
 var connectedDevice;
 var idCharac;
-var provState;
-var provBuf;
+var provState = 0;
+var provBuf = null;
 //}}}
 
 //{{{  Connect UI to our functions
@@ -156,6 +156,7 @@ function serviceDisconnect(event) //{{{
     device = null;
     connectedDevice = null;
     provState = 0;
+    provBuf = null;
     provStatus.textContent = "...";  
 
     console.log(`Device ${tgt.name} is disconnected.`);
