@@ -144,6 +144,9 @@ async function provManager() //{{{
 }
 //}}}
 
+function typedArrayToBuffer(array: Uint8Array): ArrayBuffer {
+    return array.buffer.slice(array.byteOffset, array.byteLength + array.byteOffset)
+}
 
 //{{{  Event handlers
 function serviceDisconnect(event) //{{{
@@ -171,7 +174,7 @@ function provValueChanged(event) //{{{
     {
         console.log("*** HELLO! value is "+value);
     
-        provBuf = value.buffer; 
+        provBuf = typedArrayToBuffer(value); 
 
     } else
     {
