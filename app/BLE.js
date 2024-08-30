@@ -10,7 +10,7 @@ const ticketButton = document.getElementById("ticketButton");
 const ticketStatus = document.getElementById("ticketStatus");
 
 connectButton.addEventListener("click", BLEConnectionClick);
-idButton.addEventListener("click", BLEidClick);
+provButton.addEventListener("click", BLEidClick);
 
 
 var device;
