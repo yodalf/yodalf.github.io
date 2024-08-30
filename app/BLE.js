@@ -30,11 +30,11 @@ async function connectClick() //{{{
         }
         else
         {
-            BLEdeviceManager();
+            deviceManager();
         }
     }
     else {
-        BLEdeviceManager();
+        deviceManager();
     }
 }
 //}}}
@@ -45,7 +45,7 @@ async function provClick() //{{{
         return;
     }
     else {
-        BLEidManager();
+        provManager();
     }
 }
 //}}}
@@ -61,7 +61,7 @@ async function ticketClick() //{{{
 }
 //}}}
 
-async function BLEdeviceManager() //{{{
+async function deviceManager() //{{{
 {
 
     connectionStatus.textContent = "...";
@@ -86,7 +86,7 @@ async function BLEdeviceManager() //{{{
         connectedDevice = await device.gatt.connect();
         connectionStatus.textContent = "Connected!";  
         connectButton.textContent = "Disconnect";
-        device.addEventListener('gattserverdisconnected', serviceDisconnected);
+        device.addEventListener('gattserverdisconnected', serviceDisconnect);
 
     }
     catch(error) {
@@ -96,7 +96,7 @@ async function BLEdeviceManager() //{{{
 
 }
 //}}}
-async function BLEidManager() //{{{
+async function provManager() //{{{
 {
     console.log("ID!");
     try
@@ -135,6 +135,19 @@ async function BLEidManager() //{{{
 }
 //}}}
 
+
+//{{{  Event handlers
+function serviceDisconnect(event) //{{{
+{
+    const tgt = event.target;
+
+    device = null;
+    connectedDevice = null;
+    console.log(`Device ${tgt.name} is disconnected.`);
+    connectionStatus.textContent = "IDLE";
+    connectButton.textContent = "Connect";
+}
+//}}}
 function idCarValueChanged(event) //{{{
 {
     const value = event.target.value;
@@ -146,16 +159,6 @@ function idCarValueChanged(event) //{{{
 }
 //}}}
 
-function serviceDisconnected(event) //{{{
-{
-    const tgt = event.target;
-
-    device = null;
-    connectedDevice = null;
-    console.log(`Device ${tgt.name} is disconnected.`);
-    connectionStatus.textContent = "IDLE";
-    connectButton.textContent = "Connect";
-}
 //}}}
 
 
