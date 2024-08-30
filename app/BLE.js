@@ -230,7 +230,7 @@ function provValueChanged(event) //{{{
 
             // provBuf contains a CSR . Build string to send to auth server
             console.log(provBuf);            
-            sendPEMtoServer("https://real.ath.cx/s/test.sh?c=", provBuf);
+            sendPEMtoServer("https://real.ath.cx/s/test.sh", provBuf);
         }
 
     }  
