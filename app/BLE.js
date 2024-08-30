@@ -171,7 +171,7 @@ function provValueChanged(event) //{{{
     {
         console.log("*** HELLO! value is "+value);
     
-        provBUf =i Buffer.from(value); 
+        provBuf = value.buffer; 
 
     } else
     {
