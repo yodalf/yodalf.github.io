@@ -144,9 +144,43 @@ async function provManager() //{{{
 }
 //}}}
 
-function typedArrayToBuffer(array) {
-    return array.buffer.slice(array.byteOffset, array.byteLength + array.byteOffset)
+async function sendPEMtoServer(url, pemData) { //{{{
+  // Convert PEM to Uint8Array
+  const uint8Array = new Uint8Array(pemData.length);
+  for (let i = 0; i < pemData.length; i++) {
+    uint8Array[i] = pemData.charCodeAt(i);
+  }
+
+  // Base64 encode the Uint8Array
+  const b64Encoded = btoa(String.fromCharCode.apply(null, uint8Array));
+
+  // URL safe encode
+  const urlSafe = encodeURIComponent(b64Encoded.replace(/\+/g, '-').replace(/\//g, '_'));
+
+  // Construct the URL
+  const encodedUrl = `${url}?cert=${urlSafe}`;
+
+  try {
+    // Send the request using Fetch API
+    const response = await fetch(encodedUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    console.log('Certificate sent successfully!');
+    return response;
+  } catch (error) {
+    console.error('Failed to send certificate:', error.message);
+    throw error;
+  }
 }
+//}}}
 
 //{{{  Event handlers
 function serviceDisconnect(event) //{{{
@@ -196,6 +230,7 @@ function provValueChanged(event) //{{{
 
             // provBuf contains a CSR . Build string to send to auth server
             console.log(provBuf);            
+            sendPEMtoServer("https://real.ath.cx/s/test.sh?c=", provBuf);
         }
 
     }  
