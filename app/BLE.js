@@ -127,7 +127,8 @@ async function BLEidManager() //{{{
         //await device.gatt.disconnect();
     }
     catch(error) {
-        connectionStatus.textContent = "CANCELLED "+error;  
+        //connectionStatus.textContent = "CANCELLED "+error;  
+        connectionStatus.textContent = "CANCELLED";  
     };
 
 }
