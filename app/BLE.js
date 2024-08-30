@@ -1,39 +1,23 @@
-const connectButton = document.getElementById("controlButton");
-const idButton = document.getElementById("idButton");
-const deviceName = document.getElementById("deviceNameInput");
+const connectButton = document.getElementById("connectButton");
 const connectionStatus = document.getElementById("connectionStatus");
+const deviceName = document.getElementById("deviceNameInput");
 
-connectButton.addEventListener("click", BLEConnectionHandler);
-idButton.addEventListener("click", BLEidHandler);
+
+const provButton = document.getElementById("provButton");
+const provStatus = document.getElementById("provStatus");
+
+const ticketButton = document.getElementById("ticketButton");
+const ticketStatus = document.getElementById("ticketStatus");
+
+connectButton.addEventListener("click", BLEConnectionClick);
+idButton.addEventListener("click", BLEidClick);
 
 
 var device;
+var connectedDevice;
+var idCharac;
 
-
-
-function idCarValueChanged(event)
-{
-    const value = event.target.value;
-
-    console.log("*** HELLO!");
-    console.log(value);
-    
-    return value;
-}
-
-
-function serviceDisconnected(event)
-{
-    const tgt = event.target;
-
-    device = null;
-    console.log(`Device ${tgt.name} is disconnected.`);
-    connectionStatus.textContent = "IDLE";
-    connectButton.textContent = "Connect";
-}
-
-
-async function BLEConnectionHandler()
+async function BLEConnectionClick() //{{{
 {
     if (device) {
         if (device.gatt.connected) {
@@ -41,15 +25,15 @@ async function BLEConnectionHandler()
         }
         else
         {
-            BLEManager();
+            BLEdeviceManager();
         }
     }
     else {
-        BLEManager();
+        BLEdeviceManager();
     }
 }
-
-async function BLEidHandler()
+//}}}
+async function BLEidClick() //{{{
 {
     if (!device) {
         console.log("NO DEVICE!");
@@ -59,39 +43,39 @@ async function BLEidHandler()
         BLEidManager();
     }
 }
+//}}}
 
-async function BLEidManager()
+
+function idCarValueChanged(event) //{{{
+{
+    const value = event.target.value;
+
+    console.log("*** HELLO!");
+    console.log(value);
+    
+    return value;
+}
+//}}}
+
+
+function serviceDisconnected(event) //{{{
+{
+    const tgt = event.target;
+
+    device = null;
+    connectedDevice = null;
+    console.log(`Device ${tgt.name} is disconnected.`);
+    connectionStatus.textContent = "IDLE";
+    connectButton.textContent = "Connect";
+}
+//}}}
+
+
+async function BLEidManager() //{{{
 {
     console.log("ID!");
-}
-
-async function BLEManager()
-{
-
-    connectionStatus.textContent = "...";
-
-    try {
-         let options = {
-             acceptAllDevices: true,
-             optionalServices: ["00aabbbb-0001-0000-0001-000000000001"] ,
-             //filters: [
-             //    { namePrefix: "Hello" },
-             //    { namePrefix: "A" },
-             //    { namePrefix: "B" },
-             //    { services: ["00aabbbb-0001-0000-0001-000000000001"] },
-            //],
-        };
-        
-
-        device = await navigator.bluetooth.requestDevice(options)
-            .catch((error) => { console.error(`ERR: ${error}`); connectionStatus.textContent = "CANCELLED"; } );
-       
-
-        const connectedDevice = await device.gatt.connect();
-        connectionStatus.textContent = "Connected!";  
-        connectButton.textContent = "Disconnect";
-        device.addEventListener('gattserverdisconnected', serviceDisconnected);
-
+    try
+    {
         const idService = await connectedDevice.getPrimaryService( "00aabbbb-0001-0000-0001-000000000001" );
         console.log("Service: ", idService.uuid);
 
@@ -117,6 +101,40 @@ async function BLEManager()
 
 
         //await device.gatt.disconnect();
+    }
+    catch(error) {
+        connectionStatus.textContent = "CANCELLED "+error;  
+    };
+
+}
+//}}}
+
+async function BLEdeviceManager() //{{{
+{
+
+    connectionStatus.textContent = "...";
+
+    try {
+         let options = {
+             acceptAllDevices: true,
+             optionalServices: ["00aabbbb-0001-0000-0001-000000000001"] ,
+             //filters: [
+             //    { namePrefix: "Hello" },
+             //    { namePrefix: "A" },
+             //    { namePrefix: "B" },
+             //    { services: ["00aabbbb-0001-0000-0001-000000000001"] },
+            //],
+        };
+        
+
+        device = await navigator.bluetooth.requestDevice(options)
+            .catch((error) => { console.error(`ERR: ${error}`); connectionStatus.textContent = "CANCELLED"; } );
+       
+
+        connectedDevice = await device.gatt.connect();
+        connectionStatus.textContent = "Connected!";  
+        connectButton.textContent = "Disconnect";
+        device.addEventListener('gattserverdisconnected', serviceDisconnected);
 
     }
     catch(error) {
@@ -124,5 +142,6 @@ async function BLEManager()
     };
 
 }
+//}}}
 
 
