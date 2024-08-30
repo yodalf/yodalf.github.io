@@ -3,6 +3,7 @@
 var device;
 var connectedDevice;
 var idCharac;
+var provState;
 //}}}
 
 //{{{  Connect UI to our functions
@@ -13,6 +14,7 @@ const deviceName = document.getElementById("deviceNameInput");
 
 const provButton = document.getElementById("provButton");
 const provStatus = document.getElementById("provStatus");
+provState = 0;
 
 const ticketButton = document.getElementById("ticketButton");
 const ticketStatus = document.getElementById("ticketStatus");
@@ -30,11 +32,11 @@ async function connectClick() //{{{
         }
         else
         {
-            deviceManager();
+            connectManager();
         }
     }
     else {
-        deviceManager();
+        connectManager();
     }
 }
 //}}}
@@ -61,7 +63,7 @@ async function ticketClick() //{{{
 }
 //}}}
 
-async function deviceManager() //{{{
+async function connectManager() //{{{
 {
 
     connectionStatus.textContent = "...";
@@ -70,6 +72,7 @@ async function deviceManager() //{{{
          let options = {
              acceptAllDevices: true,
              optionalServices: ["00aabbbb-0001-0000-0001-000000000001"] ,
+ 
              //filters: [
              //    { namePrefix: "Hello" },
              //    { namePrefix: "A" },
@@ -91,6 +94,7 @@ async function deviceManager() //{{{
     }
     catch(error) {
         //connectionStatus.textContent = "CANCELLED "+error;  
+        device = null;
         connectionStatus.textContent = "CANCELLED";  
     };
 
@@ -101,6 +105,11 @@ async function provManager() //{{{
     console.log("ID!");
     try
     {
+        if ( provState == 0)
+        {
+        console.log ("Start Prov");
+        provState = 1;
+        
         const idService = await connectedDevice.getPrimaryService( "00aabbbb-0001-0000-0001-000000000001" );
         console.log("Service: ", idService.uuid);
 
@@ -122,14 +131,18 @@ async function provManager() //{{{
         //buf = await idCar.readValue();
         //console.log(buf);
 
+        provStatus.textContent = "OK";  
 
 
 
         //await device.gatt.disconnect();
+        }
+
     }
     catch(error) {
-        //connectionStatus.textContent = "CANCELLED "+error;  
-        connectionStatus.textContent = "CANCELLED";  
+        //connectionStatus.textContent = "CANCELLED "+error; 
+        provState = 0;
+        provStatus.textContent = "CANCELLED";  
     };
 
 }
