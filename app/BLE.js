@@ -4,6 +4,7 @@ var device;
 var connectedDevice;
 var idCharac;
 var provState;
+var provBuf;
 //}}}
 
 //{{{  Connect UI to our functions
@@ -121,7 +122,7 @@ async function provManager() //{{{
         console.log("Characteristic: ", idCar);
 
         // Prep our notification handler
-        idCar.addEventListener('characteristicvaluechanged', idCarValueChanged);
+        idCar.addEventListener('characteristicvaluechanged', provValueChanged);
         await idCar.startNotifications();
         
         // Send a '1' request    
@@ -159,7 +160,7 @@ function serviceDisconnect(event) //{{{
     connectButton.textContent = "Connect";
 }
 //}}}
-function idCarValueChanged(event) //{{{
+function provValueChanged(event) //{{{
 {
     const value = event.target.value;
 
@@ -169,6 +170,9 @@ function idCarValueChanged(event) //{{{
     }  else if (provState == 1)
     {
         console.log("*** HELLO! value is "+value);
+    
+        provBUf =i Buffer.from(value); 
+
     } else
     {
         console.log("TBC...");
