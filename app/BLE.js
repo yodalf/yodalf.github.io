@@ -175,8 +175,8 @@ async function sendPEMtoServer(url, pemData) { //{{{
 
     console.log('Certificate sent successfully!');
 
-    const json = await response.json();
-    console.log(json);
+    const x = await response.arrayBuffer();
+    console.log(x);
 
     return response;
   } catch (error) {
