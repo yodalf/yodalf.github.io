@@ -174,7 +174,7 @@ function provValueChanged(event) //{{{
     {
         console.log("*** HELLO! value is "+value);
     
-        provBuf = typedArrayToBuffer(value); 
+        provBuf = new Uint8Array(value.buffer); 
 
     } else
     {
