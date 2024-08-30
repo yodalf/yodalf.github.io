@@ -90,7 +90,8 @@ async function BLEdeviceManager() //{{{
 
     }
     catch(error) {
-        connectionStatus.textContent = "CANCELLED "+error;  
+        //connectionStatus.textContent = "CANCELLED "+error;  
+        connectionStatus.textContent = "CANCELLED";  
     };
 
 }
