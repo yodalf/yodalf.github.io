@@ -17,7 +17,7 @@ const provStatus = document.getElementById("provStatus");
 const ticketButton = document.getElementById("ticketButton");
 const ticketStatus = document.getElementById("ticketStatus");
 
-connectButton.addEventListener("click", connectionClick);
+connectButton.addEventListener("click", connectClick);
 provButton.addEventListener("click", provClick);
 ticketButton.addEventListener("click", ticketClick);
 //}}}
