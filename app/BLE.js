@@ -174,10 +174,10 @@ function provValueChanged(event) //{{{
     }  else if (provState == 1)
     {
         let b = new Uint8Array(value.buffer); 
-        if ((b[0] && 0xf0)  == 0x10)
+        if ((b[0] & 0xf0)  == 0x10)
         {
             dec = new TextDecoder();
-            if( (b[0] && 0x0f) != 0x00) 
+            if( (b[0] & 0x0f) != 0x00) 
                 provBuf = dec.decode(b.slice(3,3+b[1]));
             else
                 provBuf = provBuf + dec.decode(b.slice(3,3+b[1]));
