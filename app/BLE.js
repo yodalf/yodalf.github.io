@@ -144,7 +144,7 @@ async function provManager() //{{{
 }
 //}}}
 
-function typedArrayToBuffer(array: Uint8Array): ArrayBuffer {
+function typedArrayToBuffer(array) {
     return array.buffer.slice(array.byteOffset, array.byteLength + array.byteOffset)
 }
 
