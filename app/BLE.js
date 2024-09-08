@@ -2,10 +2,15 @@
 //{{{  Globals
 var device;
 var connectedDevice;
+
+var idService = null;
 var idChar = null;;
+
 var provState = 0;
 var provBuf = null;
+
 dec = new TextDecoder();
+
 //}}}
 
 //{{{  Connect UI to our functions
@@ -93,6 +98,19 @@ async function connectManager() //{{{
         connectButton.textContent = "Disconnect";
         device.addEventListener('gattserverdisconnected', serviceDisconnect);
 
+        // Connect to our service and characteristic
+        idService = await connectedDevice.getPrimaryService( "00aabbbb-0001-0000-0001-000000000001" );
+        console.log("Service: ", idService.uuid);
+
+        idChar = await idService.getCharacteristic("00aabbbb-0001-0001-0001-000000000004");
+        console.log("Characteristic: ", idChar);
+
+        // Prep our notification handler
+        idChar.addEventListener('characteristicvaluechanged', idValueChanged);
+        await idChar.startNotifications();
+        
+        provManager();
+
     }
     catch(error) {
         //connectionStatus.textContent = "CANCELLED "+error;  
@@ -115,18 +133,8 @@ async function provManager() //{{{
         provState = 1;
 
 
-        // COnnect to uur service and characteristic
-        const idService = await connectedDevice.getPrimaryService( "00aabbbb-0001-0000-0001-000000000001" );
-        console.log("Service: ", idService.uuid);
-
-        idChar = await idService.getCharacteristic("00aabbbb-0001-0001-0001-000000000004");
-        console.log("Characteristic: ", idChar);
-
-        // Prep our notification handler
-        idChar.addEventListener('characteristicvaluechanged', provValueChanged);
-        await idChar.startNotifications();
         
-        // Send a '1' request    
+        // Send a CMD_POP_IDEVID_CSR request    
         let xx = Uint8Array.of(1); 
         await idChar.writeValue(xx);
         
@@ -203,7 +211,7 @@ function serviceDisconnect(event) //{{{
     connectButton.textContent = "Connect";
 }
 //}}}
-function provValueChanged(event) //{{{
+function idValueChanged(event) //{{{
 {
     const value = event.target.value;
 

@@ -1,3 +1,2 @@
-export
-echo "TEST: "$1 / $2
-
+echo "HELLO WORLD!"
+echo ${QUERY_STRING:5} | base64 -d
