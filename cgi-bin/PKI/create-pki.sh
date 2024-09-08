@@ -1,4 +1,18 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -e
+ExecDir=$(readlink -f `dirname "$0"`)
+
+# Reference: https://pki-tutorial.readthedocs.io/en/latest/
+
+#DEBUG=/dev/null
+DEBUG=/dev/stdout
+
+rm -rf SELF_PKI
+mkdir -p SELF_PKI/etc
+
+cp -r $ExecDir/TEMPLATES/* SELF_PKI/etc/
+
+cd SELF_PKI
 
 new-root-ca() { #{{{
 mkdir -p ca/root-ca/private ca/root-ca/db crl certs
@@ -113,8 +127,8 @@ rm test.sig
 #}}}
 
 new-root-ca root
-new-ca as 
 new-ca is 
+new-ca as 
 
 test-ca as 
 test-ca is
