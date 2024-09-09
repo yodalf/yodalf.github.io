@@ -16,6 +16,8 @@ var dec = new TextDecoder();
 var certIndex = 0;
 var certSize = 0;
 var currentCert = 0;
+
+var idCertType = 0;  // 0 = CSR, 1 = IDevID
 //}}}
 
 //{{{  Connect UI to our functions
@@ -105,10 +107,8 @@ async function connectManager() //{{{
 
         // Connect to our service and characteristic
         idService = await connectedDevice.getPrimaryService( "00aabbbb-0001-0000-0001-000000000001" );
-        console.log("Service: ", idService.uuid);
 
         idChar = await idService.getCharacteristic("00aabbbb-0001-0001-0001-000000000004");
-        console.log("Characteristic: ", idChar);
 
         // Prep our notification handler
         idChar.addEventListener('characteristicvaluechanged', idValueChanged);
@@ -127,14 +127,12 @@ async function connectManager() //{{{
 //}}}
 async function provManager() //{{{
 {
-    console.log("ID!");
     try
     {
         if ( provState == 0)
         {
 
         // We start a new ID check
-        console.log ("Start Prov");
         provState++;
 
         // Send a CMD_POP_IDEVID_CSR request    
@@ -144,6 +142,23 @@ async function provManager() //{{{
         provStatus.textContent = "Get ID cert";  
 
         //await device.gatt.disconnect();
+        }
+
+        if ( provState == 99 )
+        {
+            // Factory reset
+            // Send a CMD_FACTORY_RESET request    
+            let xx = Uint8Array.of(3); 
+            await idChar.writeValue(xx);
+            
+            provStatus.textContent = "...";  
+            console.log ("Factory Reset!");
+            provButton.textContent = "Provision";
+            provState=0;
+            idCertType = 0;
+
+        
+         
         }
 
     }
@@ -211,7 +226,8 @@ async function sendPEMtoServer(url, pemData) { //{{{
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    console.log('Certificate sent successfully!');
+    console.log('CSR sent for signature:');
+    console.log(pemData);
 
     const x = dec.decode(await response.arrayBuffer());
     //const  = dec.decode(x);
@@ -252,14 +268,17 @@ async function idValueChanged(event) //{{{
 
     if (provState == 0)
     {
-        console.log("ERROR! provState is 0... ");
+        console.log("provState is 0 ... device being factory reset");
     }  else if (provState == 1)
     {
         let b = new Uint8Array(value.buffer); 
         if ((b[0] & 0xf0)  == 0x10)
         {
             if( (b[0] & 0x0f) != 0x00) 
+            {
                 provBuf = dec.decode(b.slice(3,3+b[1]));
+                idCertType = b[0] & 0x0f;
+            }
             else
                 provBuf = provBuf + dec.decode(b.slice(3,3+b[1]));
         
@@ -269,39 +288,60 @@ async function idValueChanged(event) //{{{
 
         } else if (b[0] == 0x80)
         {
-            // The end
-            provState++;
-            provStatus.textContent = "CSR sent";  
+            if (idCertType == 0x01) // IDevID
+            {
+                console.log("IDevID from device:");
+                console.log(provBuf);
+                provState = 99;
+                currentCert = 0;
+                provStatus.textContent = "Device Provisioned";
+                provButton.textContent = "Factory Reset";
 
-            // provBuf contains a CSR . Build string to send to auth server
-            //console.log(provBuf);            
-            await sendPEMtoServer("https://real.ath.cx/s/sign-csr.sh", provBuf);
+            } else if (idCertType == 0x02) // CSR
+            {
+                provState++;
+                provStatus.textContent = "CSR sent";  
 
-            // We got 4 certs back: ROOT, IS, AS, IDevID
-            // in the 'receivedCerts' variable
-            provState++;
-            provStatus.textContent = "Rx Certs " + provState;  
+                // provBuf contains a CSR . Build string to send to auth server
+                //console.log(provBuf);            
+                await sendPEMtoServer("https://real.ath.cx/s/sign-csr.sh", provBuf);
 
-            console.log(receivedCerts);
+                // We got 4 certs back: ROOT, IS, AS, IDevID
+                // in the 'receivedCerts' variable
+                provState++;
+
+                console.log("ROOT certificate received from CA: ");
+                console.log(receivedCerts[0]);
+                console.log("Identity Issuer certificate received from CA: ");
+                console.log(receivedCerts[1]);
+                console.log("New IDevID certificate received from CA: ");
+                console.log(receivedCerts[3]);
 
 
-            // Validate the certs
-            // TODO
+                // Validate the certs
+                // TODO
 
-            // Start sending ROOT (currentCert == 0) to the device via BLE
-            provStatus.textContent = "Cert "+currentCert;  
-            let utf8Encode = new TextEncoder();
-            // The first 240 bytes
-            var xx = new Uint8Array([0x02, 0x00 | currentCert, 240]);
-            var yy = new Uint8Array(utf8Encode.encode(receivedCerts[currentCert]));
-            certSize = yy.length;
-            certIndex = 240;
-            yy = new Uint8Array(utf8Encode.encode(receivedCerts[currentCert]).slice(0,240));
-            let zz = new Uint8Array(xx.length + yy.length);
-            zz.set(xx);
-            zz.set(yy, xx.length);
-            await idChar.writeValue(zz);
-            
+                // Start sending ROOT (currentCert == 0) to the device via BLE
+                provStatus.textContent = "Cert "+currentCert;  
+                let utf8Encode = new TextEncoder();
+                // The first 240 bytes
+                var xx = new Uint8Array([0x02, 0x00 | currentCert, 240]);
+                var yy = new Uint8Array(utf8Encode.encode(receivedCerts[currentCert]));
+                certSize = yy.length;
+                certIndex = 240;
+                yy = new Uint8Array(utf8Encode.encode(receivedCerts[currentCert]).slice(0,240));
+                let zz = new Uint8Array(xx.length + yy.length);
+                zz.set(xx);
+                zz.set(yy, xx.length);
+                await idChar.writeValue(zz);
+            }
+            else
+            {
+                provState = 0;
+                currentCert = 0;    
+                provStatus.textContent = "Unknown state";  
+                provButton.textContent = "Factory Reset";
+            }
         }
     }  else if (provState == 3)
     {
@@ -356,10 +396,11 @@ async function idValueChanged(event) //{{{
             }
             else
             {
-            // The end
-            provState++;
-            currentCert = 0;    
-            provStatus.textContent = "Device Provisioned";  
+                // The end
+                provState = 99;
+                currentCert = 0;    
+                provStatus.textContent = "Device Provisioned";  
+                provButton.textContent = "Factory Reset";
             }
             
         }
