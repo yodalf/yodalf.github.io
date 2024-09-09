@@ -153,6 +153,32 @@ async function provManager() //{{{
 }
 //}}}
 
+async function extractMultipleCertificates(content) { //{{{
+
+    const regex = RegExp(
+        "-+BEGIN\\s+.*CERTIFICATE[^-]*-+(?:\\s|\\r|\\n)+" // Header
+        + "([A-Za-z0-9+/\r\n=]+={0,2})"                   // Base64 text
+        + "-+END\\s+.*CERTIFICATE[^-]*-+"                // Footer
+        , 'g');
+
+    let currentMatch;
+
+    const certificates = [];
+
+    while ((currentMatch = regex.exec(content)) !== null) {
+        //console.log(`Found ${currentMatch[0]}. Next starts at ${regex.lastIndex}.`);
+        certificates.push(currentMatch[0]);
+        }
+
+    if (certificates.length === 0) {
+        throw new Error('No certificates found');
+        }
+      
+    return certificates;
+
+}
+//}}}
+
 async function sendPEMtoServer(url, pemData) { //{{{
   // Convert PEM to Uint8Array
   const uint8Array = new Uint8Array(pemData.length);
@@ -184,8 +210,14 @@ async function sendPEMtoServer(url, pemData) { //{{{
 
     console.log('Certificate sent successfully!');
 
-    const x = await response.arrayBuffer();
-    console.log(dec.decode(x));
+    const x = dec.decode(await response.arrayBuffer());
+    //const  = dec.decode(x);
+    try {
+        const extractedCerts = await extractMultipleCertificates(x);
+        console.log('Received Certificates:', extractedCerts);
+    } catch (error) {
+        console.error(error.message);
+    }
 
     return response;
   } catch (error) {
@@ -241,8 +273,10 @@ function idValueChanged(event) //{{{
             provStatus.textContent = "CSR Ready";  
 
             // provBuf contains a CSR . Build string to send to auth server
-            console.log(provBuf);            
-            sendPEMtoServer("https://real.ath.cx/s/test.sh", provBuf);
+            //console.log(provBuf);            
+            sendPEMtoServer("https://real.ath.cx/s/sign-csr.sh", provBuf);
+
+
         }
 
     }  
