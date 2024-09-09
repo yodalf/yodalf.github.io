@@ -322,7 +322,7 @@ async function idValueChanged(event) //{{{
                 // TODO
 
                 // Start sending ROOT (currentCert == 0) to the device via BLE
-                provStatus.textContent = "Cert "+currentCert;  
+                provStatus.textContent = "Provisioning Cert "+currentCert;  
                 let utf8Encode = new TextEncoder();
                 // The first 240 bytes
                 var xx = new Uint8Array([0x02, 0x00 | currentCert, 240]);
@@ -379,7 +379,7 @@ async function idValueChanged(event) //{{{
             if (currentCert < 4)
             {
                 // Trig next cert
-                provStatus.textContent = "Cert "+currentCert;  
+                provStatus.textContent = "Provisioning Cert "+currentCert;  
 
                 let utf8Encode = new TextEncoder();
                 // The first 240 bytes
