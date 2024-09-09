@@ -138,3 +138,5 @@ V	21240816184227Z		89	unknown	/C=CA/O=mbed TLS/CN=Cert
 V	21240816184759Z		8A	unknown	/C=CA/O=mbed TLS/CN=Cert
 V	21240816185007Z		8B	unknown	/C=CA/O=mbed TLS/CN=Cert
 V	21240816185931Z		8C	unknown	/C=CA/O=mbed TLS/CN=Cert
+V	21240816190311Z		8D	unknown	/C=CA/O=mbed TLS/CN=Cert
+V	21240816190804Z		8E	unknown	/C=CA/O=mbed TLS/CN=Cert
