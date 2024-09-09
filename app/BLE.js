@@ -9,8 +9,13 @@ var idChar = null;;
 var provState = 0;
 var provBuf = null;
 
-dec = new TextDecoder();
+var receivedCerts;
 
+var dec = new TextDecoder();
+
+var certIndex = 0;
+var certSize = 0;
+var currentCert = 0;
 //}}}
 
 //{{{  Connect UI to our functions
@@ -130,15 +135,13 @@ async function provManager() //{{{
 
         // We start a new ID check
         console.log ("Start Prov");
-        provState = 1;
+        provState++;
 
-
-        
         // Send a CMD_POP_IDEVID_CSR request    
         let xx = Uint8Array.of(1); 
         await idChar.writeValue(xx);
         
-        provStatus.textContent = "1";  
+        provStatus.textContent = "Get ID cert";  
 
         //await device.gatt.disconnect();
         }
@@ -213,8 +216,8 @@ async function sendPEMtoServer(url, pemData) { //{{{
     const x = dec.decode(await response.arrayBuffer());
     //const  = dec.decode(x);
     try {
-        const extractedCerts = await extractMultipleCertificates(x);
-        console.log('Received Certificates:', extractedCerts);
+        receivedCerts = await extractMultipleCertificates(x);
+        //console.log('Received Certificates:', receivedCerts);
     } catch (error) {
         console.error(error.message);
     }
@@ -228,7 +231,7 @@ async function sendPEMtoServer(url, pemData) { //{{{
 //}}}
 
 //{{{  Event handlers
-function serviceDisconnect(event) //{{{
+async function serviceDisconnect(event) //{{{
 {
     const tgt = event.target;
 
@@ -243,7 +246,7 @@ function serviceDisconnect(event) //{{{
     connectButton.textContent = "Connect";
 }
 //}}}
-function idValueChanged(event) //{{{
+async function idValueChanged(event) //{{{
 {
     const value = event.target.value;
 
@@ -259,24 +262,106 @@ function idValueChanged(event) //{{{
                 provBuf = dec.decode(b.slice(3,3+b[1]));
             else
                 provBuf = provBuf + dec.decode(b.slice(3,3+b[1]));
-
         
-            // Send a '1' request    
+            // Send a CMD_ACK request    
             let xx = Uint8Array.of(0x10); 
             idChar.writeValue(xx);
-            provStatus.textContent = "1";  
 
         } else if (b[0] == 0x80)
         {
             // The end
-            provState = 0;
-            provStatus.textContent = "CSR Ready";  
+            provState++;
+            provStatus.textContent = "CSR sent";  
 
             // provBuf contains a CSR . Build string to send to auth server
             //console.log(provBuf);            
-            sendPEMtoServer("https://real.ath.cx/s/sign-csr.sh", provBuf);
+            await sendPEMtoServer("https://real.ath.cx/s/sign-csr.sh", provBuf);
+
+            // We got 4 certs back: ROOT, IS, AS, IDevID
+            // in the 'receivedCerts' variable
+            provState++;
+            provStatus.textContent = "Rx Certs " + provState;  
+
+            console.log(receivedCerts);
 
 
+            // Validate the certs
+            // TODO
+
+            // Start sending ROOT (currentCert == 0) to the device via BLE
+            provStatus.textContent = "Cert "+currentCert;  
+            let utf8Encode = new TextEncoder();
+            // The first 240 bytes
+            var xx = new Uint8Array([0x02, 0x00 | currentCert, 240]);
+            var yy = new Uint8Array(utf8Encode.encode(receivedCerts[currentCert]));
+            certSize = yy.length;
+            certIndex = 240;
+            yy = new Uint8Array(utf8Encode.encode(receivedCerts[currentCert]).slice(0,240));
+            let zz = new Uint8Array(xx.length + yy.length);
+            zz.set(xx);
+            zz.set(yy, xx.length);
+            await idChar.writeValue(zz);
+            
+        }
+    }  else if (provState == 3)
+    {
+        // We are sending the ROOT cert, CONTINUE
+
+        let b = new Uint8Array(value.buffer); 
+        if ((b[0] & 0xf0)  == 0x10)
+        {
+            let utf8Encode = new TextEncoder();
+            // The next bytes
+            if (240 < certSize - certIndex)
+            {
+                // Still more than 240
+                var xx = new Uint8Array([0x02, 0x10 | currentCert, 240]);
+                yy = new Uint8Array(utf8Encode.encode(receivedCerts[currentCert]).slice(certIndex,certIndex+240));
+                certIndex += 240;
+            }
+            else
+            {
+                // Last bytes
+                var xx = new Uint8Array([0x02, 0x20 | currentCert, certSize - certIndex]);
+                yy = new Uint8Array(utf8Encode.encode(receivedCerts[currentCert]).slice(certIndex,certSize));
+                certIndex = certSize;
+            }
+
+            let zz = new Uint8Array(xx.length + yy.length);
+            zz.set(xx);
+            zz.set(yy, xx.length);
+            await idChar.writeValue(zz);
+
+        } else if (b[0] == 0x80)
+        {
+            // Next cert
+            currentCert++; 
+            if (currentCert < 4)
+            {
+                // Trig next cert
+                provStatus.textContent = "Cert "+currentCert;  
+
+                let utf8Encode = new TextEncoder();
+                // The first 240 bytes
+                var xx = new Uint8Array([0x02, 0x00 | currentCert, 240]);
+                var yy = new Uint8Array(utf8Encode.encode(receivedCerts[currentCert]));
+                certSize = yy.length;
+                certIndex = 240;
+                yy = new Uint8Array(utf8Encode.encode(receivedCerts[currentCert]).slice(0,240));
+                let zz = new Uint8Array(xx.length + yy.length);
+                zz.set(xx);
+                zz.set(yy, xx.length);
+                await idChar.writeValue(zz);
+                     
+            }
+            else
+            {
+            // The end
+            provState++;
+            currentCert = 0;    
+            provStatus.textContent = "Device Provisioned";  
+            }
+            
         }
 
     }  
