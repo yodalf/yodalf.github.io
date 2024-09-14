@@ -18,6 +18,10 @@ var certSize = 0;
 var currentCert = 0;
 
 var idCertType = 0;  // 0 = CSR, 1 = IDevID
+
+var User = null;
+var userHash = null;
+var userCert = null;
 //}}}
 
 //{{{  Connect UI to our functions
@@ -33,10 +37,84 @@ provState = 0;
 const ticketButton = document.getElementById("ticketButton");
 const ticketStatus = document.getElementById("ticketStatus");
 
+const logintMainButton = document.getElementById("loginMainButton");
+const logintButton = document.getElementById("loginButton");
+const loginStatus = document.getElementById("loginStatus");
+const loginUser = document.getElementById("login_username");
+const loginPwd = document.getElementById("login_password");
+
 connectButton.addEventListener("click", connectClick);
 provButton.addEventListener("click", provClick);
 ticketButton.addEventListener("click", ticketClick);
+loginButton.addEventListener("click", loginClick);
 //}}}
+
+async function computeSha256(input) { //{{{
+  return new Promise((resolve, reject) => {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(input);
+    
+    crypto.subtle.digest('SHA-256', data).then(buffer => {
+      const hexArray = Array.from(new Uint8Array(buffer)).map(b => b.toString(16).padStart(2, '0'));
+      resolve(hexArray.join(''));
+    }).catch(error => reject(error));
+  });
+}
+//}}}
+
+
+//const forge = require('node-forge');
+
+async function unlockPKCS12(filePath, password) {
+  try {
+    // Read the PKCS#12 file as binary data
+    const p12Data = await readFile(filePath);
+
+    // Decode the binary data to DER format
+    const der = forge.util.decode64(forge.util.encode64(p12Data));
+
+    // Parse the DER data to ASN.1 structure
+    const asn1 = forge.asn1.fromDer(der);
+
+    // Parse the PKCS#12 structure
+    const pkcs12 = forge.pkcs12.pkcs12FromAsn1(asn1, false, password);
+
+    // Get the private key
+    const privateKey = pkcs12.getPrivateKey();
+
+    // Get the certificate
+    const certificate = pkcs12.getCertificate();
+
+    // Convert the private key to a Web Crypto-compatible format
+    const keyObject = {
+      type: 'privatekey',
+      algorithm: { name: 'RSA-PKCS1-v1_5' },
+      exponent: privateKey.exponent,
+      modulus: forge.util.bytesToHex(privateKey.n),
+      publicExponent: certificate.publicKey.n,
+      publicKey: forge.util.bytesToHex(certificate.publicKey.e)
+    };
+
+    return { privateKey: keyObject, certificate };
+  } catch (error) {
+    console.error('Error unlocking PKCS#12:', error);
+    throw error;
+  }
+}
+
+// Usage
+unlockPKCS12('path/to/your/file.p12', 'your_password')
+  .then(result => {
+    console.log('Private key:', result.privateKey);
+    console.log('Certificate:', result.certificate);
+  })
+  .catch(error => {
+    console.error('Failed to unlock PKCS#12:', error);
+  });
+
+
+
+
 
 async function connectClick() //{{{
 {
@@ -76,6 +154,44 @@ async function ticketClick() //{{{
     }
 }
 //}}}
+async function loginClick() //{{{
+{
+    if (User == null) {
+        User = loginUser.value;
+        Pwd256 = await computeSha256(loginPwd.value);
+        loginUser.value = "";
+        loginPwd.value = "";
+        console.log("Initiate login for user " + User + " ... with PWD-256: " + Pwd256);
+        loginMainButton.attributes["data-bs-toggle"].value="";
+        loginMainButton.addEventListener("click", logoutClick);
+        loginMainButton.textContent = "Logout";
+        loginStatus.textContent = "OK " + User;
+        loginHash = "234";
+        loginCert = "1123";
+
+        return;
+    }
+    else {
+        console.log("Already in, do nothing");
+    }
+}
+//}}}
+async function logoutClick() //{{{
+{
+    console.log("User "+ User + " logged out");
+    loginMainButton.attributes["data-bs-toggle"].value="modal";
+    loginMainButton.removeEventListener("click", logoutClick);
+    loginMainButton.textContent = "Login";
+    loginStatus.textContent = "";
+    loginHash = null;
+    loginCert = null;
+    User = null;
+    Pwd256 = null;
+}
+//}}}
+
+
+
 
 async function connectManager() //{{{
 {

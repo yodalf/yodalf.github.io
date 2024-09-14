@@ -147,3 +147,13 @@ V	21240816193838Z		92	unknown	/C=CA/O=mbed TLS/CN=Cert
 V	21240816194151Z		93	unknown	/C=CA/O=mbed TLS/CN=Cert
 V	21240816194616Z		94	unknown	/C=CA/O=mbed TLS/CN=Cert
 V	21240816195150Z		95	unknown	/C=CA/O=mbed TLS/CN=Cert
+V	21240816201645Z		96	unknown	/C=CA/O=mbed TLS/CN=Cert
+V	21240816202002Z		97	unknown	/C=CA/O=mbed TLS/CN=Cert
+V	21240816211631Z		98	unknown	/C=CA/O=mbed TLS/CN=Cert
+V	21240816223917Z		99	unknown	/C=CA/O=mbed TLS/CN=Cert
+V	21240817082021Z		9A	unknown	/C=CA/O=mbed TLS/CN=Cert
+V	21240817083259Z		9B	unknown	/C=CA/O=mbed TLS/CN=Cert
+V	21240817115018Z		9C	unknown	/C=CA/O=mbed TLS/CN=Cert
+V	21240818152340Z		9D	unknown	/C=CA/O=mbed TLS/CN=Cert
+V	21240818212848Z		9E	unknown	/C=CA/O=mbed TLS/CN=Cert
+V	21240821135634Z		9F	unknown	/C=AU/ST=Some-State/O=Internet Widgits Pty Ltd/CN=Realo
