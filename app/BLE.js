@@ -62,10 +62,141 @@ async function computeSha256(input) { //{{{
 }
 //}}}
 
+function AES() { //{{{
+    // https://github.com/themikefuller/Web-Cryptography
 
+  let aes = {};
+
+  aes.encrypt = async (message, password, passwordBits, iterations) => {
+  
+    let rounds = iterations || 500000;
+    let msg = new TextEncoder().encode(message);
+    let pass;
+    
+    if (password) {
+      pass = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), {
+        "name": "PBKDF2"
+      }, false, ['deriveBits']);
+    }
+    
+    if (passwordBits) {
+      pass = await crypto.subtle.importKey('raw',new Uint8Array(passwordBits),{
+        "name": "PBKDF2"
+      },false,['deriveBits'])
+    }
+    
+    let salt = crypto.getRandomValues(new Uint8Array(32));
+    let iv = crypto.getRandomValues(new Uint8Array(12));
+    
+    let bits = await crypto.subtle.deriveBits({
+      "name": "PBKDF2",
+      "salt": salt,
+      "iterations": rounds,
+      "hash": {
+        "name": "SHA-256"
+      }
+    }, pass, 256);
+    
+    let key = await crypto.subtle.importKey('raw', bits, {
+      "name": "AES-GCM"
+    }, false, ['encrypt']);
+    
+    let enc = await crypto.subtle.encrypt({
+      "name": "AES-GCM",
+      "iv": iv
+    }, key, msg);
+    
+    let iterationsHash = btoa(rounds.toString());
+    
+    let saltHash = btoa(Array.from(new Uint8Array(salt)).map(val => {
+      return String.fromCharCode(val)
+    }).join(''));
+    
+    let ivHash = btoa(Array.from(new Uint8Array(iv)).map(val => {
+      return String.fromCharCode(val)
+    }).join(''));
+    
+    let encHash = btoa(Array.from(new Uint8Array(enc)).map(val => {
+      return String.fromCharCode(val)
+    }).join(''));
+    
+    return iterationsHash + '.' + saltHash + '.' + ivHash + '.' + encHash;
+    
+  };
+
+  aes.decrypt = async (encrypted, password, passwordBits) => {
+  
+    let parts = encrypted.split('.');
+    let rounds = parseInt(atob(parts[0]));
+    
+    let salt = new Uint8Array(atob(parts[1]).split('').map(val => {
+      return val.charCodeAt(0);
+    }));
+    
+    let iv = new Uint8Array(atob(parts[2]).split('').map(val => {
+      return val.charCodeAt(0);
+    }));
+    
+    let enc = new Uint8Array(atob(parts[3]).split('').map(val => {
+      return val.charCodeAt(0);
+    }));
+    
+    let pass;
+    
+    if (password) {
+      pass = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), {
+        "name": "PBKDF2"
+      }, false, ['deriveBits']);
+    }
+    
+    if (passwordBits) {
+      pass = await crypto.subtle.importKey('raw', new Uint8Array(passwordBits), {
+        "name": "PBKDF2"
+      }, false, ['deriveBits']);
+    }
+    
+    let bits = await crypto.subtle.deriveBits({
+      "name": "PBKDF2",
+      "salt": salt,
+      "iterations": rounds,
+      "hash": {
+        "name": "SHA-256"
+      }
+    }, pass, 256);
+    
+    let key = await crypto.subtle.importKey('raw', bits, {
+      "name": "AES-GCM"
+    }, false, ['decrypt']);
+    
+    let dec = await crypto.subtle.decrypt({
+      "name": "AES-GCM",
+      "iv": iv
+    }, key, enc);
+    
+    return (new TextDecoder().decode(dec));
+    
+  };
+
+  return aes;
+
+}
+//}}}
 //const forge = require('node-forge');
 
-async function unlockPKCS12(filePath, password) {
+
+async function encryptData(data, key) { //{{{
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encrypted = await window.crypto.subtle.encrypt(
+    { name: "AES-GCM" },
+    key,
+    new TextEncoder().encode(data)
+  );
+
+  return Buffer.concat([iv, new Uint8Array(encrypted)]).toString('base64');
+}
+//}}}
+
+async function unlockPKCS12(filePath, password) { //{{{
   try {
     // Read the PKCS#12 file as binary data
     const p12Data = await readFile(filePath);
@@ -101,16 +232,73 @@ async function unlockPKCS12(filePath, password) {
     throw error;
   }
 }
+//}}}
+async function generateRSAKeyPair() { //{{{
+  const keyPair = await window.crypto.subtle.generateKey({
+    name: "RSA-OAEP",
+    modulusLength: 2048,
+    publicExponent: new Uint8Array([0x01, 0x00, 0x01]),
+    hash: "SHA-256",
+  }, true, ["encrypt", "decrypt"]);
+
+  return keyPair;
+}
+//}}}
+async function exportKeys(keyPair) { //{{{
+  try {
+    const publicKey = await window.crypto.subtle.exportKey("spki", keyPair.publicKey);
+    const privateKey = await window.crypto.subtle.exportKey("pkcs8", keyPair.privateKey);
+
+    return { publicKey, privateKey };
+  } catch (error) {
+    console.error("Failed to export keys:", error);
+    throw error;
+  }
+}
+//}}}
+async function encryptPrivateKey(privateKey, password) { //{{{
+
+const encryptedPrivateKey = await AES().encrypt(privateKey, password);
+
+return(encryptedPrivateKey);
+}
+//}}}
+async function storeEncryptedKeyPair(password) { //{{{
+  const keyPair = await generateRSAKeyPair();
+
+  const exportedPublicKey = await crypto.subtle.exportKey("jwk", keyPair.publicKey);
+  const exportedPrivateKey = await crypto.subtle.exportKey("jwk", keyPair.privateKey);
+
+  //const exportedPublicKey = crypto.subtle.exportKey('raw', keyPair.publicKey);  
+  //const exportedPrivateKey = crypto.subtle.exportKey('raw', keyPair.publicKey);  
+  const encryptedPrivateKey = await AES().encrypt(JSON.stringify(exportedPrivateKey), password);
+
+  // Store the encrypted private key and public key securely
+  localStorage.setItem("publicKey", JSON.stringify(exportedPublicKey));
+  localStorage.setItem("encryptedPrivateKey", JSON.stringify(encryptedPrivateKey));
+}
+//}}}
+async function retrieveAndDecryptKeyPair(password) { //{{{
+
+  const publicKey = await crypto.subtle.importKey('jwk', JSON.parse(localStorage.getItem("publicKey")), { name: 'RSA-OAEP', hash: "SHA-256"}, true, ["encrypt"] );
+  const decryptedPrivateKeyData = JSON.parse(await AES().decrypt(JSON.parse(localStorage.getItem("encryptedPrivateKey")), password));
+  const privateKey = await crypto.subtle.importKey('jwk', decryptedPrivateKeyData, { name: 'RSA-OAEP', hash: "SHA-256"}, true, ["decrypt"] );
+
+  return { publicKey, privateKey};
+}
+//}}}
+
+
 
 // Usage
-unlockPKCS12('path/to/your/file.p12', 'your_password')
-  .then(result => {
-    console.log('Private key:', result.privateKey);
-    console.log('Certificate:', result.certificate);
-  })
-  .catch(error => {
-    console.error('Failed to unlock PKCS#12:', error);
-  });
+//unlockPKCS12('path/to/your/file.p12', 'your_password')
+//  .then(result => {
+//    console.log('Private key:', result.privateKey);
+//    console.log('Certificate:', result.certificate);
+//  })
+//  .catch(error => {
+//    console.error('Failed to unlock PKCS#12:', error);
+//  });
 
 
 
@@ -168,6 +356,9 @@ async function loginClick() //{{{
         loginStatus.textContent = "OK " + User;
         loginHash = "234";
         loginCert = "1123";
+
+        await storeEncryptedKeyPair("toto");
+        test = await retrieveAndDecryptKeyPair("toto");
 
         return;
     }
