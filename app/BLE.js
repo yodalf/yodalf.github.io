@@ -20,6 +20,7 @@ var currentCert = 0;
 var idCertType = 0;  // 0 = CSR, 1 = IDevID
 
 var User = null;
+var Password = null;
 var userHash = null;
 var userCert = null;
 //}}}
@@ -49,18 +50,6 @@ ticketButton.addEventListener("click", ticketClick);
 loginButton.addEventListener("click", loginClick);
 //}}}
 
-async function computeSha256(input) { //{{{
-  return new Promise((resolve, reject) => {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(input);
-    
-    crypto.subtle.digest('SHA-256', data).then(buffer => {
-      const hexArray = Array.from(new Uint8Array(buffer)).map(b => b.toString(16).padStart(2, '0'));
-      resolve(hexArray.join(''));
-    }).catch(error => reject(error));
-  });
-}
-//}}}
 
 function AES() { //{{{
     // https://github.com/themikefuller/Web-Cryptography
@@ -181,20 +170,53 @@ function AES() { //{{{
 
 }
 //}}}
-//const forge = require('node-forge');
-
-
-async function encryptData(data, key) { //{{{
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const encrypted = await window.crypto.subtle.encrypt(
-    { name: "AES-GCM" },
-    key,
-    new TextEncoder().encode(data)
-  );
-
-  return Buffer.concat([iv, new Uint8Array(encrypted)]).toString('base64');
+async function computeSHA256(input) { //{{{
+  return new Promise((resolve, reject) => {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(input);
+    
+    crypto.subtle.digest('SHA-256', data).then(buffer => {
+      const hexArray = Array.from(new Uint8Array(buffer)).map(b => b.toString(16).padStart(2, '0'));
+      resolve(hexArray.join(''));
+    }).catch(error => reject(error));
+  });
 }
 //}}}
+async function generateRSAKeyPair() { //{{{
+  const keyPair = await window.crypto.subtle.generateKey({
+    name: "RSA-OAEP",
+    modulusLength: 2048,
+    publicExponent: new Uint8Array([0x01, 0x00, 0x01]),
+    hash: "SHA-256",
+  }, true, ["encrypt", "decrypt"]);
+
+  return keyPair;
+}
+//}}}
+async function storeKeyPair(keyPair, name, password) { //{{{
+  //const keyPair = await generateRSAKeyPair();
+
+  const exportedPublicKey = await crypto.subtle.exportKey("jwk", keyPair.publicKey);
+  const exportedPrivateKey = await crypto.subtle.exportKey("jwk", keyPair.privateKey);
+
+  const encryptedPrivateKey = await AES().encrypt(JSON.stringify(exportedPrivateKey), computeSHA256(password));
+
+  // Store the encrypted private key and public key securely
+  localStorage.setItem(name + "_publicKey", JSON.stringify(exportedPublicKey));
+  localStorage.setItem(name + "_encryptedPrivateKey", JSON.stringify(encryptedPrivateKey));
+}
+//}}}
+async function retrieveKeyPair(name, password) { //{{{
+
+  const publicKey = await crypto.subtle.importKey('jwk', JSON.parse(localStorage.getItem(name + "_publicKey")), { name: 'RSA-OAEP', hash: "SHA-256"}, true, ["encrypt"] );
+  const decryptedPrivateKeyData = JSON.parse(await AES().decrypt(JSON.parse(localStorage.getItem(name + "_encryptedPrivateKey")), computeSHA256(password)));
+  const privateKey = await crypto.subtle.importKey('jwk', decryptedPrivateKeyData, { name: 'RSA-OAEP', hash: "SHA-256"}, true, ["decrypt"] );
+
+  return { publicKey, privateKey};
+}
+//}}}
+
+
 
 async function unlockPKCS12(filePath, password) { //{{{
   try {
@@ -233,17 +255,6 @@ async function unlockPKCS12(filePath, password) { //{{{
   }
 }
 //}}}
-async function generateRSAKeyPair() { //{{{
-  const keyPair = await window.crypto.subtle.generateKey({
-    name: "RSA-OAEP",
-    modulusLength: 2048,
-    publicExponent: new Uint8Array([0x01, 0x00, 0x01]),
-    hash: "SHA-256",
-  }, true, ["encrypt", "decrypt"]);
-
-  return keyPair;
-}
-//}}}
 async function exportKeys(keyPair) { //{{{
   try {
     const publicKey = await window.crypto.subtle.exportKey("spki", keyPair.publicKey);
@@ -256,49 +267,7 @@ async function exportKeys(keyPair) { //{{{
   }
 }
 //}}}
-async function encryptPrivateKey(privateKey, password) { //{{{
 
-const encryptedPrivateKey = await AES().encrypt(privateKey, password);
-
-return(encryptedPrivateKey);
-}
-//}}}
-async function storeEncryptedKeyPair(password) { //{{{
-  const keyPair = await generateRSAKeyPair();
-
-  const exportedPublicKey = await crypto.subtle.exportKey("jwk", keyPair.publicKey);
-  const exportedPrivateKey = await crypto.subtle.exportKey("jwk", keyPair.privateKey);
-
-  //const exportedPublicKey = crypto.subtle.exportKey('raw', keyPair.publicKey);  
-  //const exportedPrivateKey = crypto.subtle.exportKey('raw', keyPair.publicKey);  
-  const encryptedPrivateKey = await AES().encrypt(JSON.stringify(exportedPrivateKey), password);
-
-  // Store the encrypted private key and public key securely
-  localStorage.setItem("publicKey", JSON.stringify(exportedPublicKey));
-  localStorage.setItem("encryptedPrivateKey", JSON.stringify(encryptedPrivateKey));
-}
-//}}}
-async function retrieveAndDecryptKeyPair(password) { //{{{
-
-  const publicKey = await crypto.subtle.importKey('jwk', JSON.parse(localStorage.getItem("publicKey")), { name: 'RSA-OAEP', hash: "SHA-256"}, true, ["encrypt"] );
-  const decryptedPrivateKeyData = JSON.parse(await AES().decrypt(JSON.parse(localStorage.getItem("encryptedPrivateKey")), password));
-  const privateKey = await crypto.subtle.importKey('jwk', decryptedPrivateKeyData, { name: 'RSA-OAEP', hash: "SHA-256"}, true, ["decrypt"] );
-
-  return { publicKey, privateKey};
-}
-//}}}
-
-
-
-// Usage
-//unlockPKCS12('path/to/your/file.p12', 'your_password')
-//  .then(result => {
-//    console.log('Private key:', result.privateKey);
-//    console.log('Certificate:', result.certificate);
-//  })
-//  .catch(error => {
-//    console.error('Failed to unlock PKCS#12:', error);
-//  });
 
 
 
@@ -346,10 +315,10 @@ async function loginClick() //{{{
 {
     if (User == null) {
         User = loginUser.value;
-        Pwd256 = await computeSha256(loginPwd.value);
+        Password = await computeSHA256(loginPwd.value);
         loginUser.value = "";
         loginPwd.value = "";
-        console.log("Initiate login for user " + User + " ... with PWD-256: " + Pwd256);
+        console.log("Initiate login for user " + User + " ... with PWD-256: " + Password);
         loginMainButton.attributes["data-bs-toggle"].value="";
         loginMainButton.addEventListener("click", logoutClick);
         loginMainButton.textContent = "Logout";
@@ -357,9 +326,13 @@ async function loginClick() //{{{
         loginHash = "234";
         loginCert = "1123";
 
-        await storeEncryptedKeyPair("toto");
-        test = await retrieveAndDecryptKeyPair("toto");
+        console.log("Clearing localStorage...");
+        localStorage.clear();
 
+        await storeKeyPair(await generateRSAKeyPair(), User, Password);
+        test = await retrieveKeyPair(User, Password);
+        console.log("Test pub key: " + test.publicKey);
+        console.log("Test priv key: " + test.privateKey);
         return;
     }
     else {
@@ -377,7 +350,7 @@ async function logoutClick() //{{{
     loginHash = null;
     loginCert = null;
     User = null;
-    Pwd256 = null;
+    Password = null;
 }
 //}}}
 
