@@ -8,11 +8,12 @@ echo "*** ROOT ***"
 cat PKI/SELF_PKI/ca/root-ca.crt 
 echo "*** IS ***"
 cat PKI/SELF_PKI/ca/is-ca.crt 
-#echo "*** AS ***"
-#cat PKI/SELF_PKI/ca/as-ca.crt 
+echo "*** AS ***"
+cat PKI/SELF_PKI/ca/as-ca.crt 
 
 echo "*** IS-CA SIGNED CSR ***"
 yes | openssl ca -config PKI/TEMPLATES/is-csr-sign.conf  -policy signing_policy -extensions signing_req -out TMP/cert.pem -infiles TMP/t  
+
 cat TMP/cert.pem
 
 #rm -f TMP/t
