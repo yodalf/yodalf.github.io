@@ -15,6 +15,6 @@ echo "*** IS-CA SIGNED CSR ***"
 yes | openssl ca -config PKI/TEMPLATES/is-csr-sign.conf  -policy signing_policy -extensions signing_req -out TMP/cert.pem -infiles TMP/t  
 cat TMP/cert.pem
 
-rm -f TMP/t
-rm -f TMP/cert.pem
+#rm -f TMP/t
+#rm -f TMP/cert.pem
 
