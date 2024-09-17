@@ -570,7 +570,7 @@ async function idValueChanged(event) //{{{
         {
             if (idCertType == 0x01) // IDevID
             {
-                console.log("IDevID from device:");
+                console.log("DevID from device:");
                 console.log(provBuf);
                 provState = 99;
                 currentCert = 0;
@@ -594,7 +594,7 @@ async function idValueChanged(event) //{{{
                 console.log(receivedCerts[0]);
                 console.log("Identity Issuer certificate received from CA: ");
                 console.log(receivedCerts[1]);
-                console.log("New IDevID certificate received from CA: ");
+                console.log("New DevID certificate received from CA: ");
                 console.log(receivedCerts[3]);
 
 
