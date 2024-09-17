@@ -584,7 +584,7 @@ async function idValueChanged(event) //{{{
 
                 // provBuf contains a CSR . Build string to send to auth server
                 //console.log(provBuf);            
-                await sendPEMtoServer("https://real.ath.cx/s/sign-csr.sh", provBuf);
+                await sendPEMtoServer("https://real.ath.cx/s/is-sign-csr.sh", provBuf);
 
                 // We got 4 certs back: ROOT, IS, AS, IDevID
                 // in the 'receivedCerts' variable
