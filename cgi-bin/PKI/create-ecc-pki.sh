@@ -61,6 +61,8 @@ cp /dev/null ca/$1-ca/db/$1-ca.db
 cp /dev/null ca/$1-ca/db/$1-ca.db.attr
 echo 01 > ca/$1-ca/db/$1-ca.crt.srl
 echo 01 > ca/$1-ca/db/$1-ca.crl.srl
+touch $1-index.txt
+touch $1-serial.txt
 
 # Create key
 openssl ecparam -name $CURVE -genkey -noout -out ca/$1-ca/private/$1-ca.key 

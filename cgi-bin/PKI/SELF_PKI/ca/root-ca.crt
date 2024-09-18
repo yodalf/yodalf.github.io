@@ -5,15 +5,15 @@ Certificate:
         Signature Algorithm: ecdsa-with-SHA384
         Issuer: C=CA, O=SELF, OU=SELF, CN=SELF Root CA
         Validity
-            Not Before: Sep 18 19:56:19 2024 GMT
+            Not Before: Sep 18 21:13:21 2024 GMT
             Not After : Dec 31 23:59:59 2077 GMT
         Subject: C=CA, O=SELF, OU=SELF, CN=SELF Root CA
         Subject Public Key Info:
             Public Key Algorithm: id-ecPublicKey
                 Public-Key: (112 bit)
                 pub:
-                    04:05:74:bd:ad:74:fa:f8:10:93:d4:53:5d:52:4c:
-                    89:33:62:0f:b5:8a:c4:bc:b0:66:89:b6:79:5e
+                    04:82:57:02:6e:79:3a:38:63:ba:5e:9a:50:e9:ea:
+                    63:b9:2d:88:d4:91:44:2a:9e:5b:2c:5e:ed:6c
                 ASN1 OID: secp112r1
         X509v3 extensions:
             X509v3 Key Usage: critical
@@ -21,21 +21,21 @@ Certificate:
             X509v3 Basic Constraints: critical
                 CA:TRUE
             X509v3 Subject Key Identifier: 
-                CD:55:B4:9E:F1:24:2E:8E:85:2B:68:F2:94:26:21:82:44:D2:0A:C7
+                5E:1D:F1:4E:D9:6B:46:90:EA:EC:02:01:46:DD:05:13:43:89:FE:54
             X509v3 Authority Key Identifier: 
-                CD:55:B4:9E:F1:24:2E:8E:85:2B:68:F2:94:26:21:82:44:D2:0A:C7
+                5E:1D:F1:4E:D9:6B:46:90:EA:EC:02:01:46:DD:05:13:43:89:FE:54
     Signature Algorithm: ecdsa-with-SHA384
     Signature Value:
-        30:21:02:0e:29:fa:c1:f4:bb:73:40:95:e0:c7:00:32:d6:17:
-        02:0f:00:d6:62:fc:7c:a3:c3:b8:eb:24:78:31:67:81:a8
+        30:21:02:0f:00:89:61:2d:97:cd:32:a4:fe:04:92:cd:73:ec:
+        2f:02:0e:4a:d3:5b:27:3a:e1:f7:26:2d:a9:12:44:9d:70
 -----BEGIN CERTIFICATE-----
 MIIBjTCCAVegAwIBAgIBATAKBggqhkjOPQQDAzBCMQswCQYDVQQGEwJDQTENMAsG
 A1UECgwEU0VMRjENMAsGA1UECwwEU0VMRjEVMBMGA1UEAwwMU0VMRiBSb290IENB
-MCAXDTI0MDkxODE5NTYxOVoYDzIwNzcxMjMxMjM1OTU5WjBCMQswCQYDVQQGEwJD
+MCAXDTI0MDkxODIxMTMyMVoYDzIwNzcxMjMxMjM1OTU5WjBCMQswCQYDVQQGEwJD
 QTENMAsGA1UECgwEU0VMRjENMAsGA1UECwwEU0VMRjEVMBMGA1UEAwwMU0VMRiBS
-b290IENBMDIwEAYHKoZIzj0CAQYFK4EEAAYDHgAEBXS9rXT6+BCT1FNdUkyJM2IP
-tYrEvLBmibZ5XqNjMGEwDgYDVR0PAQH/BAQDAgEGMA8GA1UdEwEB/wQFMAMBAf8w
-HQYDVR0OBBYEFM1VtJ7xJC6OhSto8pQmIYJE0grHMB8GA1UdIwQYMBaAFM1VtJ7x
-JC6OhSto8pQmIYJE0grHMAoGCCqGSM49BAMDAyQAMCECDin6wfS7c0CV4McAMtYX
-Ag8A1mL8fKPDuOskeDFngag=
+b290IENBMDIwEAYHKoZIzj0CAQYFK4EEAAYDHgAEglcCbnk6OGO6XppQ6epjuS2I
+1JFEKp5bLF7tbKNjMGEwDgYDVR0PAQH/BAQDAgEGMA8GA1UdEwEB/wQFMAMBAf8w
+HQYDVR0OBBYEFF4d8U7Za0aQ6uwCAUbdBRNDif5UMB8GA1UdIwQYMBaAFF4d8U7Z
+a0aQ6uwCAUbdBRNDif5UMAoGCCqGSM49BAMDAyQAMCECDwCJYS2XzTKk/gSSzXPs
+LwIOStNbJzrh9yYtqRJEnXA=
 -----END CERTIFICATE-----
