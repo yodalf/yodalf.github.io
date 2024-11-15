@@ -270,9 +270,6 @@ async function exportKeys(keyPair) { //{{{
 
 
 
-
-
-
 async function connectClick() //{{{
 {
     if (device) {
@@ -322,6 +319,15 @@ async function loginClick() //{{{
         loginMainButton.attributes["data-bs-toggle"].value="";
         loginMainButton.addEventListener("click", logoutClick);
         loginMainButton.textContent = "Logout";
+
+        XX = await checkLoginOnServer("https://ne201.com/s/check-user.sh", User, Password);
+        console.log("LOGIN: "+XX);
+
+        if (XX != 0) {
+            logoutClick();
+            return;
+        }
+        else {
         loginStatus.textContent = "OK " + User;
         loginHash = "234";
         loginCert = "1123";
@@ -334,6 +340,7 @@ async function loginClick() //{{{
         console.log("Test pub key: " + test.publicKey);
         console.log("Test priv key: " + test.privateKey);
         return;
+        }
     }
     else {
         console.log("Already in, do nothing");
@@ -353,7 +360,6 @@ async function logoutClick() //{{{
     Password = null;
 }
 //}}}
-
 
 
 
@@ -490,8 +496,8 @@ async function sendPEMtoServer(url, pemData) { //{{{
   // URL safe encode
   const urlSafe = encodeURIComponent(b64Encoded.replace(/\+/g, '-').replace(/\//g, '_'));
 
-  // Construct the URL
-  const encodedUrl = `${url}?cert=${urlSafe}`;
+  // construct the url
+  const encodedUrl = `${url}?cert=${urlsafe}`;
 
   try {
     // Send the request using Fetch API
@@ -525,6 +531,40 @@ async function sendPEMtoServer(url, pemData) { //{{{
   }
 }
 //}}}
+
+async function checkLoginOnServer(url, user, pwd) { //{{{
+
+  // construct the url
+  const encodedUrl = `${url}?user=${user}&hash=${pwd}`;
+
+  try {
+    // Send the request using Fetch API
+    const response = await fetch(encodedUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    console.log('CREDS SENT');
+
+    const x = dec.decode(await response.arrayBuffer());
+
+    console.log(x);
+    console.log(x);
+
+    return x;
+  } catch (error) {
+    console.error('Failed to send credentials:', error.message);
+    throw error;
+  }
+}
+//}}}
+
 
 //{{{  Event handlers
 async function serviceDisconnect(event) //{{{

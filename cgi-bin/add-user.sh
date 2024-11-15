@@ -4,7 +4,7 @@
 # $2 = Pwd
 # $3 = role
  
-HASH=$(echo "$2" | sha256sum | cut -d ' ' -f 1)
+HASH=$(echo -n "$2" | sha256sum | cut -d ' ' -f 1)
 
 # Create user private key and  cert request
 #openssl req -newkey rsa:2048 -nodes -keyout TMP/user-private_key.pem -out TMP/user-csr.pem -subj "/C=CA/ST=Quebec/L=Quebec City/O= /OU= /CN=$1" -addext "subjectAltName=URI:https://ne201.com/user/$1" -text
