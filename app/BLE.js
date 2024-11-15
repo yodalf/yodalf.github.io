@@ -67,7 +67,14 @@ async function loginClick() //{{{
         loginMainButton.addEventListener("click", logoutClick);
         loginMainButton.textContent = "Logout";
 
-        XX = await checkLoginOnServer("https://ne201.com/s/check-user.sh", userId, userHash);
+        devId = localStorage.getItem("ne201_devId");
+        if (null == devId)
+            devIdHash="";
+        else
+            devIdHash = await computeSHA256(localStorage.getItem("ne201_devId"));
+
+
+        XX = await checkLoginOnServer("https://ne201.com/s/check-user.sh", userId, userHash, devIdHash);
         console.log("LOGIN: "+XX);
 
 
@@ -107,10 +114,10 @@ async function logoutClick() //{{{
 }
 //}}}
 
-async function checkLoginOnServer(url, user, pwd) { //{{{
+async function checkLoginOnServer(url, user, pwd, devIdHash) { //{{{
 
   // construct the url
-  const encodedUrl = `${url}?user=${user}&hash=${pwd}`;
+  const encodedUrl = `${url}?user=${user}&hash=${pwd}&idHash=${devIdHash}`;
 
   try {
     // Send the request using Fetch API

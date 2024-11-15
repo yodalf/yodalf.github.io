@@ -23,6 +23,7 @@ function extract_variables() { #{{{
 
     USER=${variables["user"]}
     HASH=${variables["hash"]}
+    IDHASH=${variables["idHash"]}
 
     # Print the extracted variables
     #for key in "${!variables[@]}"; do
@@ -33,9 +34,15 @@ function extract_variables() { #{{{
 
 extract_variables "$QUERY_STRING"
 
-DBHASH=$(sqlite3 database.db  "select pwdhash from users where username='$USER';")
+DBUSERHASH=$(sqlite3 database.db  "select pwdhash from users where username='$USER';")
+DBCERT=$(sqlite3 database.db  "select cert from users where username='$USER';")
 
-if [[ $HASH == $DBHASH ]]; then
+echo $USER
+echo $HASH
+echo $IDHASH
+echo -n $DBCERT | sha256sum
+
+if [[ $HASH == $DBUSERHASH ]]; then
     echo 0
 else
     echo 1;
