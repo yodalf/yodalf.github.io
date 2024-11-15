@@ -70,6 +70,8 @@ async function loginClick() //{{{
         XX = await checkLoginOnServer("https://ne201.com/s/check-user.sh", userId, userHash);
         console.log("LOGIN: "+XX);
 
+        syncDevId();
+
         if (XX != 0) {
             logoutClick();
             return;
@@ -144,7 +146,53 @@ async function checkLoginOnServer(url, user, pwd) { //{{{
 }
 //}}}
 
+async function syncDevId() {
+    var subject = "/C=US/O=Test/CN=example.com";
+    var sigalg = "SHA256withRSA";
+    var keyalg = "RSA";
+    var keylen = 2048;
+    var curve = "NIST P-256";
 
+    if ( null == localStorage.getItem("ne201_kpub") )
+        {
+        var kp = KEYUTIL.generateKeypair(keyalg, keylen);
+        localStorage.setItem("ne201_kpub", KEYUTIL.getPEM(kp.pubKeyObj));
+        localStorage.setItem("ne201_kprv", KEYUTIL.getPEM(kp.prvKeyObj, "PKCS8PRV", "passcode"));
+        console.log("Keypair successfully generated");
+        }
+
+    if ( null == localStorage.getItem("ne201_devId") )
+      {
+        var kpub = KEYUTIL.getKey(localStorage.getItem("ne201_kpub"));
+        var kprv = KEYUTIL.getKey(localStorage.getItem("ne201_kprv"), "passcode");
+
+        var csr_pem = KJUR.asn1.csr.CSRUtil.newCSRPEM({
+          "subject": {"str": subject},
+          "sbjpubkey": kpub,
+          "sigalg": "SHA1withRSA",
+          "sbjprvkey": kprv
+        });
+
+        sessionStorage.setItem("ne201_csr", csr_pem);
+        console.log("CSR for mobile successfully generated ... submitting to CA ...");
+        
+        var csr = sessionStorage.getItem("ne201_csr");
+        await sendPEMtoServer("https://ne201.com/s/is-sign-csr.sh", csr);
+
+        localStorage.setItem("ne201_ca_root", receivedCerts[0]);
+        localStorage.setItem("ne201_id_issuer", receivedCerts[1]);
+        localStorage.setItem("ne201_devId", receivedCerts[3]);
+      }
+      
+    console.log("ROOT certificate received from CA: ");
+    console.log(localStorage.getItem("ne201_ca_root"));
+    console.log("Identity Issuer certificate received from CA: ");
+    console.log(localStorage.getItem("ne201_id_issuer"));
+    console.log("DevID certificate: ");
+    console.log(localStorage.getItem("ne201_devId"));
+
+
+}
 
 
 async function connectClick() //{{{
@@ -543,7 +591,7 @@ async function sendPEMtoServer(url, pemData) { //{{{
   const urlSafe = encodeURIComponent(b64Encoded.replace(/\+/g, '-').replace(/\//g, '_'));
 
   // construct the url
-  const encodedUrl = `${url}?cert=${urlsafe}`;
+  const encodedUrl = `${url}?cert=${urlSafe}`;
 
   try {
     // Send the request using Fetch API
