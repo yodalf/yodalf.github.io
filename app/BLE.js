@@ -19,13 +19,19 @@ var currentCert = 0;
 
 var idCertType = 0;  // 0 = CSR, 1 = IDevID
 
-var User = null;
-var Password = null;
+var userId = null;
 var userHash = null;
 var userCert = null;
 //}}}
 
 //{{{  Connect UI to our functions
+const logintMainButton = document.getElementById("loginMainButton");
+const logintButton = document.getElementById("loginButton");
+const loginStatus = document.getElementById("loginStatus");
+const loginUser = document.getElementById("login_username");
+const loginPwd = document.getElementById("login_password");
+loginButton.addEventListener("click", loginClick);
+
 const connectButton = document.getElementById("connectButton");
 const connectionStatus = document.getElementById("connectionStatus");
 const deviceName = document.getElementById("deviceNameInput");
@@ -38,16 +44,146 @@ provState = 0;
 const ticketButton = document.getElementById("ticketButton");
 const ticketStatus = document.getElementById("ticketStatus");
 
-const logintMainButton = document.getElementById("loginMainButton");
-const logintButton = document.getElementById("loginButton");
-const loginStatus = document.getElementById("loginStatus");
-const loginUser = document.getElementById("login_username");
-const loginPwd = document.getElementById("login_password");
-
 connectButton.addEventListener("click", connectClick);
 provButton.addEventListener("click", provClick);
 ticketButton.addEventListener("click", ticketClick);
-loginButton.addEventListener("click", loginClick);
+//}}}
+
+// LOGIN & LDevId for mobile
+async function loginClick() //{{{
+{
+    if (userId == null) {
+        // The current user
+        userId = loginUser.value;
+        // The currennt hash
+        userHash = await computeSHA256(loginPwd.value);
+
+        // Reset input variables
+        loginUser.value = "";
+        loginPwd.value = "";
+         
+        console.log("Initiate login for user " + userId + " ... with PWD-256: " + userHash);
+        loginMainButton.attributes["data-bs-toggle"].value="";
+        loginMainButton.addEventListener("click", logoutClick);
+        loginMainButton.textContent = "Logout";
+
+        XX = await checkLoginOnServer("https://ne201.com/s/check-user.sh", userId, userHash);
+        console.log("LOGIN: "+XX);
+
+        if (XX != 0) {
+            logoutClick();
+            return;
+        }
+        else {
+        loginStatus.textContent = "OK " + userId;
+        loginHash = "234";
+        loginCert = "1123";
+
+        console.log("Clearing localStorage...");
+        localStorage.clear();
+
+        await storeKeyPair(await generateRSAKeyPair(), userId, userHash);
+        test = await retrieveKeyPair(userId, userHash);
+        console.log("Test pub key: " + test.publicKey);
+        console.log("Test priv key: " + test.privateKey);
+
+
+
+        return;
+        }
+    }
+    else {
+        console.log("Already in, do nothing");
+    }
+}
+//}}}
+async function logoutClick() //{{{
+{
+    console.log("User "+ userId + " logged out");
+    loginMainButton.attributes["data-bs-toggle"].value="modal";
+    loginMainButton.removeEventListener("click", logoutClick);
+    loginMainButton.textContent = "Login";
+    loginStatus.textContent = "";
+    loginHash = null;
+    loginCert = null;
+    userId = null;
+    userHash = null;
+}
+//}}}
+
+async function checkLoginOnServer(url, user, pwd) { //{{{
+
+  // construct the url
+  const encodedUrl = `${url}?user=${user}&hash=${pwd}`;
+
+  try {
+    // Send the request using Fetch API
+    const response = await fetch(encodedUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    console.log('CREDS SENT');
+
+    const x = dec.decode(await response.arrayBuffer());
+
+    console.log(x);
+    console.log(x);
+
+    return x;
+  } catch (error) {
+    console.error('Failed to send credentials:', error.message);
+    throw error;
+  }
+}
+//}}}
+
+
+
+
+async function connectClick() //{{{
+{
+    if (device) {
+        if (device.gatt.connected) {
+            device.gatt.disconnect();
+        }
+        else
+        {
+            connectManager();
+        }
+    }
+    else {
+        connectManager();
+    }
+}
+//}}}
+async function provClick() //{{{
+{
+    if (!device) {
+        console.log("NO DEVICE!");
+        return;
+    }
+    else {
+        provManager();
+    }
+}
+//}}}
+async function ticketClick() //{{{
+{
+    if (!device) {
+        console.log("NO DEVICE!");
+        return;
+    }
+    else {
+        console.log("Ticket click!");
+    }
+}
 //}}}
 
 
@@ -182,6 +318,7 @@ async function computeSHA256(input) { //{{{
   });
 }
 //}}}
+
 async function generateRSAKeyPair() { //{{{
   const keyPair = await window.crypto.subtle.generateKey({
     name: "RSA-OAEP",
@@ -269,97 +406,6 @@ async function exportKeys(keyPair) { //{{{
 //}}}
 
 
-
-async function connectClick() //{{{
-{
-    if (device) {
-        if (device.gatt.connected) {
-            device.gatt.disconnect();
-        }
-        else
-        {
-            connectManager();
-        }
-    }
-    else {
-        connectManager();
-    }
-}
-//}}}
-async function provClick() //{{{
-{
-    if (!device) {
-        console.log("NO DEVICE!");
-        return;
-    }
-    else {
-        provManager();
-    }
-}
-//}}}
-async function ticketClick() //{{{
-{
-    if (!device) {
-        console.log("NO DEVICE!");
-        return;
-    }
-    else {
-        console.log("Ticket click!");
-    }
-}
-//}}}
-async function loginClick() //{{{
-{
-    if (User == null) {
-        User = loginUser.value;
-        Password = await computeSHA256(loginPwd.value);
-        loginUser.value = "";
-        loginPwd.value = "";
-        console.log("Initiate login for user " + User + " ... with PWD-256: " + Password);
-        loginMainButton.attributes["data-bs-toggle"].value="";
-        loginMainButton.addEventListener("click", logoutClick);
-        loginMainButton.textContent = "Logout";
-
-        XX = await checkLoginOnServer("https://ne201.com/s/check-user.sh", User, Password);
-        console.log("LOGIN: "+XX);
-
-        if (XX != 0) {
-            logoutClick();
-            return;
-        }
-        else {
-        loginStatus.textContent = "OK " + User;
-        loginHash = "234";
-        loginCert = "1123";
-
-        console.log("Clearing localStorage...");
-        localStorage.clear();
-
-        await storeKeyPair(await generateRSAKeyPair(), User, Password);
-        test = await retrieveKeyPair(User, Password);
-        console.log("Test pub key: " + test.publicKey);
-        console.log("Test priv key: " + test.privateKey);
-        return;
-        }
-    }
-    else {
-        console.log("Already in, do nothing");
-    }
-}
-//}}}
-async function logoutClick() //{{{
-{
-    console.log("User "+ User + " logged out");
-    loginMainButton.attributes["data-bs-toggle"].value="modal";
-    loginMainButton.removeEventListener("click", logoutClick);
-    loginMainButton.textContent = "Login";
-    loginStatus.textContent = "";
-    loginHash = null;
-    loginCert = null;
-    User = null;
-    Password = null;
-}
-//}}}
 
 
 
@@ -532,38 +578,6 @@ async function sendPEMtoServer(url, pemData) { //{{{
 }
 //}}}
 
-async function checkLoginOnServer(url, user, pwd) { //{{{
-
-  // construct the url
-  const encodedUrl = `${url}?user=${user}&hash=${pwd}`;
-
-  try {
-    // Send the request using Fetch API
-    const response = await fetch(encodedUrl, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    console.log('CREDS SENT');
-
-    const x = dec.decode(await response.arrayBuffer());
-
-    console.log(x);
-    console.log(x);
-
-    return x;
-  } catch (error) {
-    console.error('Failed to send credentials:', error.message);
-    throw error;
-  }
-}
-//}}}
 
 
 //{{{  Event handlers
