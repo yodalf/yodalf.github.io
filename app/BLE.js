@@ -70,28 +70,22 @@ async function loginClick() //{{{
         XX = await checkLoginOnServer("https://ne201.com/s/check-user.sh", userId, userHash);
         console.log("LOGIN: "+XX);
 
-        syncDevId();
 
         if (XX != 0) {
             logoutClick();
             return;
         }
         else {
-        loginStatus.textContent = "OK " + userId;
-        loginHash = "234";
-        loginCert = "1123";
+            try {
+                await syncDevId(userId, userHash);
+            } catch (error) {
+                logoutClick();
+                return;
+            }
+        
+            loginStatus.textContent = "OK " + userId;
 
-        console.log("Clearing localStorage...");
-        localStorage.clear();
-
-        await storeKeyPair(await generateRSAKeyPair(), userId, userHash);
-        test = await retrieveKeyPair(userId, userHash);
-        console.log("Test pub key: " + test.publicKey);
-        console.log("Test priv key: " + test.privateKey);
-
-
-
-        return;
+            return;
         }
     }
     else {
@@ -146,7 +140,7 @@ async function checkLoginOnServer(url, user, pwd) { //{{{
 }
 //}}}
 
-async function syncDevId() {
+async function syncDevId(userId, userHash) {
     var subject = "/C=US/O=Test/CN=example.com";
     var sigalg = "SHA256withRSA";
     var keyalg = "RSA";
@@ -157,14 +151,14 @@ async function syncDevId() {
         {
         var kp = KEYUTIL.generateKeypair(keyalg, keylen);
         localStorage.setItem("ne201_kpub", KEYUTIL.getPEM(kp.pubKeyObj));
-        localStorage.setItem("ne201_kprv", KEYUTIL.getPEM(kp.prvKeyObj, "PKCS8PRV", "passcode"));
+        localStorage.setItem("ne201_kprv", KEYUTIL.getPEM(kp.prvKeyObj, "PKCS8PRV", userHash));
         console.log("Keypair successfully generated");
         }
 
     if ( null == localStorage.getItem("ne201_devId") )
       {
         var kpub = KEYUTIL.getKey(localStorage.getItem("ne201_kpub"));
-        var kprv = KEYUTIL.getKey(localStorage.getItem("ne201_kprv"), "passcode");
+        var kprv = KEYUTIL.getKey(localStorage.getItem("ne201_kprv"), userHash);
 
         var csr_pem = KJUR.asn1.csr.CSRUtil.newCSRPEM({
           "subject": {"str": subject},
@@ -177,20 +171,26 @@ async function syncDevId() {
         console.log("CSR for mobile successfully generated ... submitting to CA ...");
         
         var csr = sessionStorage.getItem("ne201_csr");
-        await sendPEMtoServer("https://ne201.com/s/is-sign-csr.sh", csr);
 
-        localStorage.setItem("ne201_ca_root", receivedCerts[0]);
-        localStorage.setItem("ne201_id_issuer", receivedCerts[1]);
-        localStorage.setItem("ne201_devId", receivedCerts[3]);
+        try 
+          {
+            await sendPEMtoServer("https://ne201.com/s/is-sign-csr.sh", csr, userId, userHash);
+            localStorage.setItem("ne201_ca_root", receivedCerts[0]);
+            localStorage.setItem("ne201_id_issuer", receivedCerts[1]);
+            localStorage.setItem("ne201_devId", receivedCerts[3]);
+            console.log("ROOT certificate from CA: ");
+            console.log(localStorage.getItem("ne201_ca_root"));
+            console.log("Identity Issuer certificate received from CA: ");
+            console.log(localStorage.getItem("ne201_id_issuer"));
+            console.log("DevID certificate: ");
+            console.log(localStorage.getItem("ne201_devId"));
+
+        } catch (error) {
+            console.log("ERRO! "+error);
+            throw error;
+        }
       }
       
-    console.log("ROOT certificate received from CA: ");
-    console.log(localStorage.getItem("ne201_ca_root"));
-    console.log("Identity Issuer certificate received from CA: ");
-    console.log(localStorage.getItem("ne201_id_issuer"));
-    console.log("DevID certificate: ");
-    console.log(localStorage.getItem("ne201_devId"));
-
 
 }
 
@@ -367,42 +367,6 @@ async function computeSHA256(input) { //{{{
 }
 //}}}
 
-async function generateRSAKeyPair() { //{{{
-  const keyPair = await window.crypto.subtle.generateKey({
-    name: "RSA-OAEP",
-    modulusLength: 2048,
-    publicExponent: new Uint8Array([0x01, 0x00, 0x01]),
-    hash: "SHA-256",
-  }, true, ["encrypt", "decrypt"]);
-
-  return keyPair;
-}
-//}}}
-async function storeKeyPair(keyPair, name, password) { //{{{
-  //const keyPair = await generateRSAKeyPair();
-
-  const exportedPublicKey = await crypto.subtle.exportKey("jwk", keyPair.publicKey);
-  const exportedPrivateKey = await crypto.subtle.exportKey("jwk", keyPair.privateKey);
-
-  const encryptedPrivateKey = await AES().encrypt(JSON.stringify(exportedPrivateKey), computeSHA256(password));
-
-  // Store the encrypted private key and public key securely
-  localStorage.setItem(name + "_publicKey", JSON.stringify(exportedPublicKey));
-  localStorage.setItem(name + "_encryptedPrivateKey", JSON.stringify(encryptedPrivateKey));
-}
-//}}}
-async function retrieveKeyPair(name, password) { //{{{
-
-  const publicKey = await crypto.subtle.importKey('jwk', JSON.parse(localStorage.getItem(name + "_publicKey")), { name: 'RSA-OAEP', hash: "SHA-256"}, true, ["encrypt"] );
-  const decryptedPrivateKeyData = JSON.parse(await AES().decrypt(JSON.parse(localStorage.getItem(name + "_encryptedPrivateKey")), computeSHA256(password)));
-  const privateKey = await crypto.subtle.importKey('jwk', decryptedPrivateKeyData, { name: 'RSA-OAEP', hash: "SHA-256"}, true, ["decrypt"] );
-
-  return { publicKey, privateKey};
-}
-//}}}
-
-
-
 async function unlockPKCS12(filePath, password) { //{{{
   try {
     // Read the PKCS#12 file as binary data
@@ -440,22 +404,6 @@ async function unlockPKCS12(filePath, password) { //{{{
   }
 }
 //}}}
-async function exportKeys(keyPair) { //{{{
-  try {
-    const publicKey = await window.crypto.subtle.exportKey("spki", keyPair.publicKey);
-    const privateKey = await window.crypto.subtle.exportKey("pkcs8", keyPair.privateKey);
-
-    return { publicKey, privateKey };
-  } catch (error) {
-    console.error("Failed to export keys:", error);
-    throw error;
-  }
-}
-//}}}
-
-
-
-
 
 async function connectManager() //{{{
 {
@@ -577,7 +525,7 @@ async function extractMultipleCertificates(content) { //{{{
 }
 //}}}
 
-async function sendPEMtoServer(url, pemData) { //{{{
+async function sendPEMtoServer(url, pemData, userId, userHash) { //{{{
   // Convert PEM to Uint8Array
   const uint8Array = new Uint8Array(pemData.length);
   for (let i = 0; i < pemData.length; i++) {
@@ -591,7 +539,7 @@ async function sendPEMtoServer(url, pemData) { //{{{
   const urlSafe = encodeURIComponent(b64Encoded.replace(/\+/g, '-').replace(/\//g, '_'));
 
   // construct the url
-  const encodedUrl = `${url}?cert=${urlSafe}`;
+  const encodedUrl = `${url}?${urlSafe}&${userId}&${userHash}`;
 
   try {
     // Send the request using Fetch API
@@ -616,6 +564,7 @@ async function sendPEMtoServer(url, pemData) { //{{{
         //console.log('Received Certificates:', receivedCerts);
     } catch (error) {
         console.error(error.message);
+        throw error;
     }
 
     return response;
@@ -625,7 +574,6 @@ async function sendPEMtoServer(url, pemData) { //{{{
   }
 }
 //}}}
-
 
 
 //{{{  Event handlers
