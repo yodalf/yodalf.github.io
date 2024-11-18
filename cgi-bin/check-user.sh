@@ -35,15 +35,23 @@ function extract_variables() { #{{{
 extract_variables "$QUERY_STRING"
 
 DBUSERHASH=$(sqlite3 database.db  "select pwdhash from users where username='$USER';")
-DBCERT=$(sqlite3 database.db  "select cert from users where username='$USER';")
+DBCERTHASH=$(sqlite3 database.db  "select cert from users where username='$USER';" | sha256sum | cut -d ' ' -f1)
 
-echo $USER
-echo $HASH
-echo $IDHASH
-echo -n $DBCERT | sha256sum
+#echo $USER
+#echo $HASH
+#echo $DBCERTHASH
 
 if [[ $HASH == $DBUSERHASH ]]; then
-    echo 0
+    if [[ $DBCERTHASH == "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b" ]]; then
+        # empty cert
+        echo 2
+    else
+        if [[ $IDHASH == $DBCERTHASH ]]; then
+            echo 0
+        else
+            echo 1
+        fi
+    fi
 else
     echo 1;
 fi

@@ -43,9 +43,9 @@ echo "*** AS ***"
 cat PKI/SELF_PKI/ca/as-ca.crt 
 
 echo "*** IS-CA SIGNED CSR ***"
-yes | openssl ca -config PKI/TEMPLATES/is-csr-sign.conf  -policy signing_policy -create_serial -rand_serial -extensions signing_req -out TMP/cert.pem -infiles TMP/t  
+yes | openssl ca -notext -config PKI/TEMPLATES/is-csr-sign.conf  -policy signing_policy -create_serial -rand_serial -extensions signing_req -out TMP/cert.pem -infiles TMP/t  
 
-CERT=$(cat TMP/cert.pem)
+CERT=$(openssl x509 -in TMP/cert.pem)
 
 # Push the cert to the database
 sqlite3 database.db "UPDATE users set cert='$CERT' where pwdhash='$HASH'"

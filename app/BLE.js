@@ -67,22 +67,24 @@ async function loginClick() //{{{
         loginMainButton.addEventListener("click", logoutClick);
         loginMainButton.textContent = "Logout";
 
-        devId = localStorage.getItem("ne201_devId");
+        devId = localStorage.getItem("ne201_devId")+'\n';
         if (null == devId)
             devIdHash="";
         else
-            devIdHash = await computeSHA256(localStorage.getItem("ne201_devId"));
+            devIdHash = await computeSHA256(devId);
 
 
         XX = await checkLoginOnServer("https://ne201.com/s/check-user.sh", userId, userHash, devIdHash);
         console.log("LOGIN: "+XX);
 
 
-        if (XX != 0) {
+        if (XX == 1) {
             logoutClick();
             return;
         }
-        else {
+        else if (XX == 2) {
+            // Remote cert is empty ... we must clear our local cert
+            localStorage.removeItem("ne201_devId");
             try {
                 await syncDevId(userId, userHash);
             } catch (error) {
@@ -94,6 +96,13 @@ async function loginClick() //{{{
 
             return;
         }
+        else if (XX != 0) {
+            logoutClick();
+            return;
+        }
+    
+        loginStatus.textContent = "OK " + userId;
+
     }
     else {
         console.log("Already in, do nothing");
@@ -147,7 +156,7 @@ async function checkLoginOnServer(url, user, pwd, devIdHash) { //{{{
 }
 //}}}
 
-async function syncDevId(userId, userHash) {
+async function syncDevId(userId, userHash) { //{{{
     var subject = "/C=US/O=Test/CN=example.com";
     var sigalg = "SHA256withRSA";
     var keyalg = "RSA";
@@ -200,6 +209,7 @@ async function syncDevId(userId, userHash) {
       
 
 }
+//}}}
 
 
 async function connectClick() //{{{
