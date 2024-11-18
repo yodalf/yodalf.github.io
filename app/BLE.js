@@ -151,7 +151,15 @@ async function checkLoginOnServer(url, user, pwd, devIdHash) { //{{{
     return x;
   } catch (error) {
     console.error('Failed to send credentials:', error.message);
-    throw error;
+    console.log("TRYING LOCAL login...");
+    if (user == localStorage.getItem("ne201_userId")) {
+        if (pwd == localStorage.getItem("ne201_userHash")) {
+            return "0";
+        }
+    } else {
+        throw error;
+        return "1";
+    }
   }
 }
 //}}}
@@ -191,9 +199,14 @@ async function syncDevId(userId, userHash) { //{{{
         try 
           {
             await sendPEMtoServer("https://ne201.com/s/is-sign-csr.sh", csr, userId, userHash);
+           
             localStorage.setItem("ne201_ca_root", receivedCerts[0]);
             localStorage.setItem("ne201_id_issuer", receivedCerts[1]);
             localStorage.setItem("ne201_devId", receivedCerts[3]);
+
+            localStorage.setItem("ne201_userId", userId);  
+            localStorage.setItem("ne201_userHash", userHash);  
+
             console.log("ROOT certificate from CA: ");
             console.log(localStorage.getItem("ne201_ca_root"));
             console.log("Identity Issuer certificate received from CA: ");
