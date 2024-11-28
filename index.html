@@ -180,9 +180,9 @@
   <main>
 
 
+    <!-- LOGIN -->
     <button type="button" id="loginMainButton" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#loginModal">Login</button>
 
-    <!-- Modal -->
     <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -215,7 +215,50 @@
         </div>
       </div>
 
+    <!-- TICKET -->
+      <div class="row">
+        <div class="col-2 gy-4">
+    <button type="button" id="ticketMainButton" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#ticketModal">Token Request</button>
+        </div>
+      </div>
+    
+      <div class="modal fade" id="ticketModal" tabindex="-1" aria-labelledby="ticketModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="ticketModalLabel">Token Request</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="mb-3">
+                            <label for="pru" class="form-label">Audience</label>
+                            <input type="text" class="form-control" id="ticket_idlist" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="request" class="form-label">Subject</label>
+                            <input type="text" class="form-control" id="ticket_request" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="request" class="form-label">Life time (days)</label>
+                            <input type="text" class="form-control" id="ticket_lifetimeDays" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" id="ticketButton" class="btn btn-primary" data-bs-dismiss="modal">Send Request</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
+      <div class="row">
+        <div class="col-6 gy-4" > <h5 id="ticketStatus">...</h5>
+        </div>
+      </div>
+
+    <!-- CONNECT TO DEVICE -->
       <div class="row">
         <div class="col-6 gy-4">
             <button type="button" id="connectButton" class="btn btn-primary">Connect</button>
@@ -227,6 +270,7 @@
         </div>
       </div>
       
+    <!-- PROVISION DEVICE -->
       <div class="row">
         <div class="col-6 gy-4">
             <button type="button" id="provButton" class="btn btn-primary">Provision</button>
@@ -235,17 +279,6 @@
       
       <div class="row">
         <div class="col-6 gy-4" > <h5 id="provStatus">...</h5>
-        </div>
-      </div>
-      
-      <div class="row">
-        <div class="col-2 gy-4">
-            <button type="button" id="ticketButton" class="btn btn-primary">Ticket</button>
-        </div>
-      </div>
-      
-      <div class="row">
-        <div class="col-6 gy-4" > <h5 id="ticketStatus">...</h5>
         </div>
       </div>
       

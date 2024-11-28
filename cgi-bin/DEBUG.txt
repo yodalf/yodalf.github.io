@@ -1,0 +1,10 @@
+sqlite3 ../database.db  "select cert from users where username='admin';" | openssl x509 -pubkey -noout
+
+
+echo -n "{"key": "42BA3EC1C1AC3D470A1CE7CBC6B766DF08788F7BA5513430CA66CDB484739A89", "iv": "E8E24E1433ACB86A43FB0A9B903255E7"}" > msg
+cat msg  |  openssl pkeyutl -encrypt -inkey kpub -pubin -in -  | xxd -p -c0 > msg_e 
+cat msg_e | xxd -r -p | openssl pkeyutl -decrypt -inkey kprv -in -
+
+
+openssl pkeyutl -decrypt -inkey kprv -in m
+

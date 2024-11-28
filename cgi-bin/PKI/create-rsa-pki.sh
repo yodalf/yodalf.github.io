@@ -38,6 +38,7 @@ yes | openssl ca -selfsign \
     -enddate 20771231235959Z \
     &> $DEBUG
 
+openssl x509 -in ca/root-ca.crt -pubkey -noout > ca/root-ca.pub
 
 openssl ca -gencrl \
     -config etc/root-ca.conf \
@@ -69,6 +70,8 @@ yes | openssl ca \
     -out ca/$1-ca.crt \
     -extensions signing_ca_ext \
     &> $DEBUG
+
+openssl x509 -in ca/$1-ca.crt -pubkey -noout > ca/$1-ca.pub
 
 openssl ca -gencrl \
     -config etc/$1-ca.conf \

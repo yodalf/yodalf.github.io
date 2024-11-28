@@ -2,6 +2,7 @@ set -x
 
 mkdir -p TMP
 mkdir -p PKI/NEW_CERTS
+touch PKI/SELF_PKI/is-index.txt
 
 # Function to parse URL parameters
 parse_url_params() {
@@ -53,6 +54,6 @@ sqlite3 database.db "UPDATE users set cert='$CERT' where pwdhash='$HASH'"
 
 cat TMP/cert.pem
 
-rm -f TMP/t
-rm -f TMP/cert.pem
+#rm -f TMP/t
+#rm -f TMP/cert.pem
 

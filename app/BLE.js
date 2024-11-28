@@ -41,8 +41,12 @@ const provButton = document.getElementById("provButton");
 const provStatus = document.getElementById("provStatus");
 provState = 0;
 
+const ticketMainButton = document.getElementById("ticketMainButton");
 const ticketButton = document.getElementById("ticketButton");
 const ticketStatus = document.getElementById("ticketStatus");
+const ticketIdList = document.getElementById("ticket_idlist");
+const ticketRequest = document.getElementById("ticket_request");
+const ticketLifetimeDays = document.getElementById("ticket_lifetimeDays");
 
 connectButton.addEventListener("click", connectClick);
 provButton.addEventListener("click", provClick);
@@ -74,15 +78,50 @@ async function loginClick() //{{{
             devIdHash = await computeSHA256(devId);
 
 
-        XX = await checkLoginOnServer("https://ne201.com/s/check-user.sh", userId, userHash, devIdHash);
+        XX = JSON.parse(await checkLoginOnServer("https://ne201.com/s/check-user.sh", userId, userHash, devIdHash));
         console.log("LOGIN: "+XX);
+   
+        //var kprv = KEYUTIL.getPEM(KEYUTIL.getKey(localStorage.getItem("ne201_kprv"), userHash), "PKCS8PRV");
+        var kprv = localStorage.getItem("ne201_kprv");
+        if (kprv != null) {
+
+            //var kpub = KEYUTIL.getPEM(KEYUTIL.getKey(localStorage.getItem("ne201_kpub")), "PKCS8PUB");
+            var kpub = localStorage.getItem("ne201_kpub");
+
+            var priv = await importPrivateKey(kprv);
+            var pub = await importPublicKey(kpub);
+
+    //        var keypair = await window.crypto.subtle.generateKey(
+    //            {
+    //            name: "RSA-OAEP",
+    //            // Consider using a 4096-bit key for systems that require long-term security
+    //            modulusLength: 2048,
+    //            publicExponent: new Uint8Array([1, 0, 1]),
+    //            hash: "SHA-256",
+    //            },
+    //            true,
+    //            ["encrypt", "decrypt"]
+    //          )
+
+            var X1 = await crypto.subtle.encrypt( { name: "RSA-OAEP", }, pub, hexStringToArrayBuffer("123456"));
+            var XB1 = bytesToHex(X1);
+            var X2 = await crypto.subtle.decrypt( { name: "RSA-OAEP", }, priv, X1);
+
+            var R0 = hexStringToArrayBuffer(XX.key);
+            //var R = await crypto.subtle.decrypt(encryptAlgorithm, priv, hexStringToArrayBuffer(XX.key))
+            var R = await crypto.subtle.decrypt({ name: 'RSA-OAEP', }, priv, R0);
+    //        var M = hexToUint8Array(XX.key);
+    //        var B = hexStringToArrayBuffer(XX.key);
+            //var R = await crypto.subtle.decrypt({ name: 'RSA-OAEP', hash: "SHA-256", }, priv, B)
+
+        }
 
 
-        if (XX == 1) {
+        if (XX.res == 1) {
             logoutClick();
             return;
         }
-        else if (XX == 2) {
+        else if (XX.res == 2) {
             // Remote cert is empty ... we must clear our local cert
             localStorage.removeItem("ne201_devId");
             try {
@@ -92,15 +131,18 @@ async function loginClick() //{{{
                 return;
             }
         
-            loginStatus.textContent = "OK " + userId;
+            //loginStatus.textContent = "OK " + userId;
 
-            return;
+            //return;
         }
-        else if (XX != 0) {
+        else if (XX.res != 0) {
             logoutClick();
             return;
         }
-    
+   
+
+        // Try to decrypt ephemeral key
+
         loginStatus.textContent = "OK " + userId;
 
     }
@@ -120,6 +162,23 @@ async function logoutClick() //{{{
     loginCert = null;
     userId = null;
     userHash = null;
+}
+//}}}
+
+// Request a ticket
+async function ticketClick() //{{{
+{
+    if (userId == null) {
+        console.log("NO User!");
+        return;
+    }
+    else {
+        // Only way to get here is to be a valid user with valid creds and a valid devId cert for the mobile.
+        console.log("Ticket click!");
+        
+        var XX = await getTicketFromServer("https://ne201.com/s/ticket-req.sh", userId, userHash, ticketIdList.value, ticketRequest.value, ticketLifetimeDays.value);
+
+    }
 }
 //}}}
 
@@ -145,21 +204,51 @@ async function checkLoginOnServer(url, user, pwd, devIdHash) { //{{{
 
     const x = dec.decode(await response.arrayBuffer());
 
-    console.log(x);
-    console.log(x);
-
     return x;
   } catch (error) {
-    console.error('Failed to send credentials:', error.message);
     console.log("TRYING LOCAL login...");
     if (user == localStorage.getItem("ne201_userId")) {
         if (pwd == localStorage.getItem("ne201_userHash")) {
             return "0";
+        } else {
+            return "1";
         }
     } else {
-        throw error;
         return "1";
     }
+  }
+}
+//}}}
+async function getTicketFromServer(url, user, pwd, idList, request, lifetime) { //{{{
+
+  // construct the url
+  const encodedUrl = `${url}?user=${user}&hash=${pwd}&idlist=${idList}&request=${request}&lifetime=${lifetime}`;
+
+  try {
+    // Send the request using Fetch API
+    const response = await fetch(encodedUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    console.log('TICKET REQUEST SENT');
+
+    const x = dec.decode(await response.arrayBuffer());
+
+    console.log(x);
+  
+    var kpub = KEYUTIL.getKey(localStorage.getItem("ne201_kpub"));
+    var kprv = KEYUTIL.getKey(localStorage.getItem("ne201_kprv"), userHash);
+
+    return x;
+  } catch (error) {
+    console.log("NO connection to server!");
   }
 }
 //}}}
@@ -173,9 +262,23 @@ async function syncDevId(userId, userHash) { //{{{
 
     if ( null == localStorage.getItem("ne201_kpub") )
         {
-        var kp = KEYUTIL.generateKeypair(keyalg, keylen);
-        localStorage.setItem("ne201_kpub", KEYUTIL.getPEM(kp.pubKeyObj));
-        localStorage.setItem("ne201_kprv", KEYUTIL.getPEM(kp.prvKeyObj, "PKCS8PRV", userHash));
+        //var kp = KEYUTIL.generateKeypair(keyalg, keylen);
+        let kp = await window.crypto.subtle.generateKey(
+          {
+            name: "RSA-OAEP",
+            modulusLength: 2048,
+            publicExponent: new Uint8Array([1, 0, 1]),
+            hash: "SHA-256",
+          },
+          true,
+          ["encrypt", "decrypt"],
+        );
+        const pubKey = await pemEncodePublicKey(kp);
+        const prvKey = await pemEncodePrivateKey(kp);
+        localStorage.setItem("ne201_kpub", pubKey);
+        localStorage.setItem("ne201_kprv", prvKey, userHash);
+        //localStorage.setItem("ne201_kpub", KEYUTIL.getPEM(kp.publicKey));
+        //localStorage.setItem("ne201_kprv", KEYUTIL.getPEM(kp.privateKey, "PKCS8PRV", userHash));
         console.log("Keypair successfully generated");
         }
 
@@ -252,17 +355,38 @@ async function provClick() //{{{
     }
 }
 //}}}
-async function ticketClick() //{{{
-{
-    if (!device) {
-        console.log("NO DEVICE!");
-        return;
-    }
-    else {
-        console.log("Ticket click!");
-    }
+
+
+
+
+function arrayBufToString(buf) {
+	return String.fromCharCode.apply(null, new Uint8Array(buf));
 }
-//}}}
+
+function pemEncode(label, data) {
+	const base64encoded = window.btoa(data);
+	const base64encodedWrapped = base64encoded.replace(/(.{64})/g, "$1\n");
+	return `-----BEGIN ${label}-----\n${base64encodedWrapped}\n-----END ${label}-----`;
+}
+
+async function exportKeyAsString(format, key) {
+	const exported = await window.crypto.subtle.exportKey(format, key);
+	return arrayBufToString(exported);
+}
+
+async function pemEncodePrivateKey(keyPair) {
+	const exported = await exportKeyAsString("pkcs8", keyPair.privateKey);
+	return pemEncode("PRIVATE KEY", exported);
+}
+
+async function pemEncodePublicKey(keyPair) {
+	const exported = await exportKeyAsString("spki", keyPair.publicKey);
+	return pemEncode("PUBLIC KEY", exported);
+}
+
+
+
+
 
 
 function AES() { //{{{
@@ -396,6 +520,158 @@ async function computeSHA256(input) { //{{{
   });
 }
 //}}}
+
+function hexToUint8Array (string) {
+    var bytes = new Uint8Array(Math.ceil(string.length / 2));
+    for (var i = 0; i < bytes.length; i++) bytes[i] = parseInt(string.substr(i * 2, 2), 16);
+    return bytes;
+}
+
+
+function hexStringToArrayBuffer(hexString) {
+  // Validate input
+  //if (!/^[0-9a-f]{2}$/.test(hexString)) {
+  //  throw new Error('Invalid hex string');
+  // }
+
+  // Convert hex string to ArrayBuffer
+  const arrayBuffer = new ArrayBuffer(hexString.length / 2);
+  const uint8Array = new Uint8Array(arrayBuffer);
+
+  for (let i = 0; i < hexString.length; i += 2) {
+    const byte = parseInt(hexString.substr(i, 2), 16);
+    uint8Array[i / 2] = byte;
+  }
+
+  return arrayBuffer;
+}
+
+
+function _base64StringToArrayBuffer(b64str) {
+  const byteStr = atob(b64str)
+  const bytes = new Uint8Array(byteStr.length)
+  for (let i = 0; i < byteStr.length; i++) {
+    bytes[i] = byteStr.charCodeAt(i)
+  }
+  return bytes.buffer
+}
+
+function str2ab(str) {
+    const buffer = new Uint8Array(str.length);
+    for (let i = 0; i < str.length; i++) {
+      buffer[i] = str.charCodeAt(i);
+    }
+    return buffer;
+  }
+
+function _convertPemToArrayBuffer(pem) {
+  const lines = pem.split('\n')
+  let encoded = ''
+  for(let i = 0;i < lines.length;i++){
+    if (lines[i].trim().length > 0 &&
+        lines[i].indexOf('-----BEGIN RSA PRIVATE KEY-----') < 0 &&
+        lines[i].indexOf('-----BEGIN PRIVATE KEY-----') < 0 &&
+        lines[i].indexOf('-----BEGIN PUBLIC KEY-----') < 0 &&
+        lines[i].indexOf('-----END RSA PRIVATE KEY-----') < 0 &&
+        lines[i].indexOf('-----END PRIVATE KEY-----') < 0 &&
+        lines[i].indexOf('-----END PUBLIC KEY-----') < 0) {
+      encoded += lines[i].trim()
+    }
+  }
+  return _base64StringToArrayBuffer(encoded)
+}
+
+
+//const encryptAlgorithm = {
+//  name: "RSA-OAEP",
+//  modulusLength: 2048,
+//  publicExponent: new Uint8Array([1, 0, 1]),
+//  extractable: true,
+//  hash: {
+//    name: "SHA-256"
+//  }
+//}
+const encryptAlgorithm = {
+  name: "RSA-OAEP",
+  hash: "SHA-256"
+}
+
+
+async function importPublicKey(pem) {
+  // fetch the part of the PEM string between header and footer
+  //const pemHeader = "-----BEGIN PRIVATE KEY-----";
+  //const pemFooter = "-----END PRIVATE KEY-----";
+
+  //const pemContents = pem.substring(
+  //  pemHeader.length,
+  //  pem.length - pemFooter.length - 1,
+  //);
+  // base64 decode the string to get the binary data
+  //const binaryDerString = window.atob(pemContents);
+  //const binaryDerString = _convertPemToArrayBuffer(pem);
+  // convert from a binary string to an ArrayBuffer
+  //const binaryDer = str2ab(binaryDerString);
+  //const binaryDer = str2ab(binaryDerString);
+  const binaryDer = _convertPemToArrayBuffer(pem);
+
+  return window.crypto.subtle.importKey(
+    "spki",
+    binaryDer,
+    {
+      name: "RSA-OAEP",
+      hash: "SHA-256",
+    },
+    true,
+    ["encrypt"],
+  );
+}
+async function importPrivateKey(pem) {
+  // fetch the part of the PEM string between header and footer
+  //const pemHeader = "-----BEGIN PRIVATE KEY-----";
+  //const pemFooter = "-----END PRIVATE KEY-----";
+
+  //const pemContents = pem.substring(
+  //  pemHeader.length,
+  //  pem.length - pemFooter.length - 1,
+  //);
+  // base64 decode the string to get the binary data
+  //const binaryDerString = window.atob(pemContents);
+  //const binaryDerString = _convertPemToArrayBuffer(pem);
+  // convert from a binary string to an ArrayBuffer
+  //const binaryDer = str2ab(binaryDerString);
+  //const binaryDer = str2ab(binaryDerString);
+  const binaryDer = _convertPemToArrayBuffer(pem);
+
+  return window.crypto.subtle.importKey(
+    "pkcs8",
+    binaryDer,
+    {
+      name: "RSA-OAEP",
+      hash: "SHA-256",
+    },
+    true,
+    ["decrypt"],
+  );
+}
+
+// Convert a hex string to a byte array
+function hexToBytes(hex) {
+    let bytes = [];
+    for (let c = 0; c < hex.length; c += 2)
+        bytes.push(parseInt(hex.substr(c, 2), 16));
+    return bytes;
+}
+
+// Convert a byte array to a hex string
+function bytesToHex(bytes) {
+    let hex = [];
+    for (let i = 0; i < bytes.length; i++) {
+        let current = bytes[i] < 0 ? bytes[i] + 256 : bytes[i];
+        hex.push((current >>> 4).toString(16));
+        hex.push((current & 0xF).toString(16));
+    }
+    return hex.join("");
+}
 
 async function unlockPKCS12(filePath, password) { //{{{
   try {

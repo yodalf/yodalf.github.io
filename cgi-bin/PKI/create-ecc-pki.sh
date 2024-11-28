@@ -14,7 +14,8 @@ cp -r $ExecDir/TEMPLATES/* SELF_PKI/etc/
 
 cd SELF_PKI
 
-CURVE="secp112r1"
+#CURVE="secp112r1"
+CURVE="secp256k1"
 
 new-root-ca() { #{{{
 mkdir -p ca/root-ca/private ca/root-ca/db crl certs
@@ -45,6 +46,7 @@ yes | openssl ca -selfsign \
     -enddate 20771231235959Z \
     &> $DEBUG
 
+openssl x509 -in ca/root-ca.crt -pubkey -noout > ca/root-ca.pub
 
 openssl ca -gencrl \
     -config etc/root-ca.conf \
@@ -87,6 +89,7 @@ openssl ca -gencrl \
     -out crl/$1-ca.crl \
     &> $DEBUG
 
+openssl x509 -in ca/$1-ca.crt -pubkey -noout > ca/$1-ca.pub
 
 cat ca/$1-ca.crt ca/root-ca.crt > \
     ca/$1-ca-chain.pem
@@ -142,6 +145,6 @@ new-root-ca root
 new-ca is 
 new-ca as 
 
-test-ca as 
-test-ca is
+#test-ca as 
+#test-ca is
 
