@@ -1,40 +1,11 @@
-function extract_variables() { #{{{
-    local encoded_string="$1"
-    
-    # Split the string into key-value pairs
-    IFS='&' read -ra pairs <<< "$encoded_string"
-    
-    declare -A variables
-    
-    for pair in "${pairs[@]}"; do
-        if [ -n "$pair" ]; then
-            key="${pair%%=*}"
-            value="${pair#*=}"
-            
-            # Decode the value
-            decoded_value=$(echo "$value" | sed 's/+/%20/g; s/%\([0-9a-f]\{2\}\)/\\x\1/g')
-            
-            # Add the decoded key-value pair to the array
-            variables["$key"]="$decoded_value"
-        fi
-    done
-
-    USER=${variables["user"]}
-    HASH=${variables["hash"]}
-    IDHASH=${variables["idHash"]}
-
-    # Print the extracted variables
-    #for key in "${!variables[@]}"; do
-    #    echo "$key=${variables[$key]}"
-    #done
-}
-#}}}
-
-extract_variables "$QUERY_STRING"
+OBJ=$(echo $QUERY_STRING | base64 -d)
+USER=$(echo $OBJ | jq -r .usr)
+HASH=$(echo $OBJ | jq -r .hash)
+IDHASH=$(echo $OBJ | jq -r .idHash)
+RESPONSE=$(echo $OBJ | jq -r .response)
 
 DBUSERHASH=$(sqlite3 database.db  "select pwdhash from users where username='$USER';")
 DBCERTHASH=$(sqlite3 database.db  "select cert from users where username='$USER';" | sha256sum | cut -d ' ' -f1)
-
 
 
 #echo $USER
@@ -42,8 +13,8 @@ DBCERTHASH=$(sqlite3 database.db  "select cert from users where username='$USER'
 #echo $DBCERTHASH
 
 if [[ $HASH == $DBUSERHASH ]]; then
+    # EMPTY CERTIFICATE !
     if [[ $DBCERTHASH == "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b" ]]; then
-        # empty cert
         JSON_RET=$(printf '{"key": "", "res": "2"}' )
         echo -n $JSON_RET
     else
@@ -58,24 +29,41 @@ if [[ $HASH == $DBUSERHASH ]]; then
             KEY=$(echo $X | awk -F= '{print $2}' | cut -d ' ' -f1)
             IV=$(echo $X | awk -F= '{print $3}' | cut -d ' ' -f1)
             JSON_KEY=$( printf '{"key": "%s", "iv": "%s"}' "$KEY" "$IV" )
-            echo -n $JSON_KEY > TEST/ch_JK
-            #ENCODED=$(echo $JSON_KEY | base64)
 
-            # Encrypt with user<s public key
-            #JSON_RET=$(printf '{"key": "%s", "res": "%s"}' "$( echo $JSON_KEY |  openssl pkeyutl -encrypt -inkey $T -certin -in - | xxd -p -c0)" "0")
-            
-            cp $T TEST/ch_inkey
-            JSON_RET=$(printf '{"key": "%s", "res": "%s"}' "$( echo -n $JSON_KEY |  openssl pkeyutl -encrypt -inkey $T -certin -in - -pkeyopt rsa_padding_mode:oaep -pkeyopt rsa_oaep_md:sha256 -pkeyopt rsa_mgf1_md:sha256   | xxd -p -c0)" "0")
-            echo -n $JSON_RET > TEST/ch_JR
 
-            rm -f $T
-            echo -n $JSON_RET
+            if [[ -z $RESPONSE ]]; then
+                # NONCE
+                NONCE=$(openssl rand -hex 8)
+                echo -n "$NONCE" > /tmp/NONCE
+                # Return a NONCE challenge to be decrypted
+
+                JSON_RET=$(printf '{"key": "%s", "nonce": "%s", "res": "%s"}' \
+                    "$( echo -n "$JSON_KEY" |  openssl pkeyutl -encrypt -inkey $T -certin -in - -pkeyopt rsa_padding_mode:oaep -pkeyopt rsa_oaep_md:sha256 -pkeyopt rsa_mgf1_md:sha256   | xxd -p -c0)" \
+                    "$( echo -n "$NONCE" |  openssl pkeyutl -encrypt -inkey $T -certin -in - -pkeyopt rsa_padding_mode:oaep -pkeyopt rsa_oaep_md:sha256 -pkeyopt rsa_mgf1_md:sha256   | xxd -p -c0)" \
+                    "3")
+                rm -f $T
+                echo -n $JSON_RET
+            else
+                # Check if the nonce was properly decrypted
+                if [[ -e /tmp/NONCE ]]; then 
+                    NONCE=$(cat /tmp/NONCE) 
+                fi
+                if [[ "$NONCE" == "$RESPONSE" ]]; then
+                    # Return SUCCESS
+                    JSON_RET=$(printf '{"key": "%s", "nonce": "%s", "res": "%s"}' "NONCE OK" "" "0" )
+                else
+                    JSON_RET=$(printf '{"key": "%s", "nonce": "%s", "res": "%s"}' "NONCE FAIL" "" "1" )
+                fi
+
+                rm -f /tmp/NONCE
+                echo -n $JSON_RET
+            fi
         else
-            JSON_RET=$(printf '{"key": "", "res": "1"}') 
+            JSON_RET=$(printf '{"key": "INVALID ID HASH", "res": "1"}') 
             echo -n $JSON_RET
         fi
     fi
 else
-    JSON_RET=$(printf '{"key": "", "res": "1"}')
+    JSON_RET=$(printf '{"key": "BAD CREDENTIALS", "res": "1"}')
     echo -n $JSON_RET
 fi

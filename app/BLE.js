@@ -71,60 +71,32 @@ async function loginClick() //{{{
         loginMainButton.addEventListener("click", logoutClick);
         loginMainButton.textContent = "Logout";
 
-        devId = localStorage.getItem("ne201_devId")+'\n';
+        // Get the WDevID cert if available
+        //devId = localStorage.getItem("ne201_devId")+'\n';
+        devId = localStorage.getItem("ne201_devId");
+        
+        // iGet hash to check
         if (null == devId)
             devIdHash="";
         else
-            devIdHash = await computeSHA256(devId);
+            devIdHash = await computeSHA256(devId+'\n');
 
-
-        XX = JSON.parse(await checkLoginOnServer("https://ne201.com/s/check-user.sh", userId, userHash, devIdHash));
-        console.log("LOGIN: "+XX);
+        // Validate credentials & WDevID + nonce challenge response
+        // If SUCCESS, returned object contains a symmetric key ans a "0" result
+        XX = await checkLoginOnServer("https://ne201.com/s/check-user.sh", userId, userHash, devIdHash);
+        console.log("LOGIN: "+XX.res);
    
-        //var kprv = KEYUTIL.getPEM(KEYUTIL.getKey(localStorage.getItem("ne201_kprv"), userHash), "PKCS8PRV");
-        var kprv = localStorage.getItem("ne201_kprv");
-        if (kprv != null) {
-
-            //var kpub = KEYUTIL.getPEM(KEYUTIL.getKey(localStorage.getItem("ne201_kpub")), "PKCS8PUB");
-            var kpub = localStorage.getItem("ne201_kpub");
-
-            var priv = await importPrivateKey(kprv);
-            var pub = await importPublicKey(kpub);
-
-    //        var keypair = await window.crypto.subtle.generateKey(
-    //            {
-    //            name: "RSA-OAEP",
-    //            // Consider using a 4096-bit key for systems that require long-term security
-    //            modulusLength: 2048,
-    //            publicExponent: new Uint8Array([1, 0, 1]),
-    //            hash: "SHA-256",
-    //            },
-    //            true,
-    //            ["encrypt", "decrypt"]
-    //          )
-
-            var X1 = await crypto.subtle.encrypt( { name: "RSA-OAEP", }, pub, hexStringToArrayBuffer("123456"));
-            var XB1 = bytesToHex(X1);
-            var X2 = await crypto.subtle.decrypt( { name: "RSA-OAEP", }, priv, X1);
-
-            var R0 = hexStringToArrayBuffer(XX.key);
-            //var R = await crypto.subtle.decrypt(encryptAlgorithm, priv, hexStringToArrayBuffer(XX.key))
-            var R = await crypto.subtle.decrypt({ name: 'RSA-OAEP', }, priv, R0);
-    //        var M = hexToUint8Array(XX.key);
-    //        var B = hexStringToArrayBuffer(XX.key);
-            //var R = await crypto.subtle.decrypt({ name: 'RSA-OAEP', hash: "SHA-256", }, priv, B)
-
-        }
-
-
         if (XX.res == 1) {
+            // Credentials invalid
             logoutClick();
             return;
         }
         else if (XX.res == 2) {
-            // Remote cert is empty ... we must clear our local cert
+            // Credentials valid, but no remote cert.
+            // WORKER ONBOARDING 
             localStorage.removeItem("ne201_devId");
             try {
+                // Obtain a WDevID cert
                 await syncDevId(userId, userHash);
             } catch (error) {
                 logoutClick();
@@ -135,15 +107,19 @@ async function loginClick() //{{{
 
             //return;
         }
-        else if (XX.res != 0) {
+        else if (XX.res == 0) {
+            // 
+            loginStatus.textContent = "OK " + userId;
+            return;
+        } 
+        else {
+            // Anything else
             logoutClick();
             return;
         }
+        
    
 
-        // Try to decrypt ephemeral key
-
-        loginStatus.textContent = "OK " + userId;
 
     }
     else {
@@ -184,8 +160,25 @@ async function ticketClick() //{{{
 
 async function checkLoginOnServer(url, user, pwd, devIdHash) { //{{{
 
-  // construct the url
-  const encodedUrl = `${url}?user=${user}&hash=${pwd}&idHash=${devIdHash}`;
+    obj = {usr:user, hash:pwd, idHash:devIdHash, response:""};  
+    res = await toServer(url, obj);
+
+    // Invalid credentials, we have no nonce to decrypt, return as is
+    if (res.nonce == "" ) return res; 
+
+    // We got a challenge ... try to decrypt and send response
+    const encodedNonce = hexStringToArrayBuffer(res.nonce);
+    const encodedKey = hexStringToArrayBuffer(res.key);
+    const priv = await importPrivateKey(localStorage.getItem("ne201_kprv"));
+    const decodedKey = new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'RSA-OAEP', }, priv, encodedKey));
+    const decodedNonce = new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'RSA-OAEP', }, priv, encodedNonce));
+    
+    // Send the decoded nonce back for verification
+    obj.response = decodedNonce;
+    res = await toServer(url, obj);
+
+    res.key = decodedKey;
+    return res;
 
   try {
     // Send the request using Fetch API
@@ -356,8 +349,36 @@ async function provClick() //{{{
 }
 //}}}
 
+async function toServer(url, obj) {
+    // Send an object to a server
+ 
+    const encodedObj = stob64u(JSON.stringify(obj));
+    const encodedUrl = `${url}?${encodedObj}`;
 
+    try {
+      // Send the request using Fetch API
+      const response = await fetch(encodedUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      });
 
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const x = JSON.parse(dec.decode(await response.arrayBuffer()));
+
+      return x;
+    } catch (error) {
+      console.error('Error ', error);
+      }
+}
+
+function fromServer(str) {
+    // Receive an object from a server 
+}
 
 function arrayBufToString(buf) {
 	return String.fromCharCode.apply(null, new Uint8Array(buf));
