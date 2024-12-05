@@ -55,7 +55,7 @@ provButton.addEventListener("click", provClick);
 ticketButton.addEventListener("click", ticketClick);
 //}}}
 
-loginMainButton.style.visibility = "hidden";
+//loginMainButton.style.visibility = "hidden";
 provButton.style.visibility = "hidden";
 provStatus.style.visibility = "hidden";
 
@@ -75,7 +75,7 @@ async function loginClick() //{{{
         console.log("Initiate login for user " + userId + " ... with PWD-256: " + userHash);
         loginMainButton.attributes["data-bs-toggle"].value="";
         loginMainButton.addEventListener("click", logoutClick);
-        loginMainButton.textContent = "Logout";
+        loginMainButton.textContent = "Worker onboarding";
 
         // Get the WDevID cert if available
         //devId = localStorage.getItem("ne201_devId")+'\n';
@@ -104,7 +104,8 @@ async function loginClick() //{{{
             try {
                 // Obtain a WDevID cert
                 await syncDevId(userId, userHash);
-                loginStatus.textContent = userId + " onboarded OK";
+                //loginStatus.textContent = userId + " onboarded";
+                logoutClick(userId + " onboarded");
             } catch (error) {
                 logoutClick("BAD ID SYNC");
                 return;
@@ -116,7 +117,8 @@ async function loginClick() //{{{
         }
         else if (res.res == 0) {
             // 
-            loginStatus.textContent = "OK " + userId;
+            //loginStatus.textContent = "OK " + userId;
+            logoutClick("OK " + userId);
             return;
         } 
         else {
@@ -139,7 +141,7 @@ async function logoutClick(msg) //{{{
     console.log("User "+ userId + " logged out");
     loginMainButton.attributes["data-bs-toggle"].value="modal";
     loginMainButton.removeEventListener("click", logoutClick);
-    loginMainButton.textContent = "Login";
+    loginMainButton.textContent = "Worker onboarding";
     if (typeof msg === 'object') 
         loginStatus.textContent = "";
     else

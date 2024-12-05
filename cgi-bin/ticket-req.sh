@@ -37,7 +37,7 @@ else
     if [[ "$NONCE" == "$RESPONSE" ]]; then
         # Return SUCCESS
         # Create the token
-        TOK=$(./jwtgen.sh $QUERY_STRING)  
+        TOK=$(./jwtgen.sh $QUERY_STRING "$(echo $DBCERT | base64 -w0)")  
         JSON_RET=$(printf '{"token": "%s", "res": "%s"}' $TOK "0" )
     else
         # FAIL
