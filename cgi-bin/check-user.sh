@@ -7,6 +7,8 @@ RESPONSE=$(echo $OBJ | jq -r .response)
 DBUSERHASH=$(sqlite3 database.db  "select pwdhash from users where username='$USER';")
 DBCERTHASH=$(sqlite3 database.db  "select cert from users where username='$USER';" | sha256sum | cut -d ' ' -f1)
 
+#echo $IDHASH
+#echo $DBCERTHASH
 
 #echo $USER
 #echo $HASH
@@ -15,7 +17,7 @@ DBCERTHASH=$(sqlite3 database.db  "select cert from users where username='$USER'
 if [[ $HASH == $DBUSERHASH ]]; then
     # EMPTY CERTIFICATE !
     if [[ $DBCERTHASH == "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b" ]]; then
-        JSON_RET=$(printf '{"key": "", "res": "2"}' )
+        JSON_RET=$(printf '{"key": "", "nonce":"","res": "2"}' )
         echo -n $JSON_RET
     else
         if [[ $IDHASH == $DBCERTHASH ]]; then

@@ -98,7 +98,7 @@ async function loginClick() //{{{
             try {
                 // Obtain a WDevID cert
                 await syncDevId(userId, userHash);
-                loginStatus.textContent = userID + " onboarded OK";
+                loginStatus.textContent = userId + " onboarded OK";
             } catch (error) {
                 logoutClick("BAD ID SYNC");
                 return;
@@ -134,10 +134,10 @@ async function logoutClick(msg) //{{{
     loginMainButton.attributes["data-bs-toggle"].value="modal";
     loginMainButton.removeEventListener("click", logoutClick);
     loginMainButton.textContent = "Login";
-    if (msg.pointerId == undefined) 
-        loginStatus.textContent = msg;
-    else
+    if (typeof msg === 'object') 
         loginStatus.textContent = "";
+    else
+        loginStatus.textContent = msg;
 
     loginHash = null;
     loginCert = null;
