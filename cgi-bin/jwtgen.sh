@@ -1,10 +1,20 @@
 #! /usr/bin/env bash
+if [[ -n "$1" ]]; then
 
-# echo -n "eyjHbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJFUzI1NmluT1RBIiwibmFtZSI6IkpvaG4gRG9lIn0" | openssl dgst -sha256 -binary -sign ec-secp256k1-priv-key.pem | openssl enc -base64 | tr -d '\n=' | tr -- '+/' '-_'
+OBJ=$(echo $1 | base64 -d)
+USER=$(echo $OBJ | jq -r .usr)
+IDHASH=$(echo $OBJ | jq -r .idHash)
+AUDIENCE=$(echo $OBJ | jq -r .aud)
+SUBJECT=$(echo $OBJ | jq -r .sub)
+LIFETIME=$(echo $OBJ | jq -r .life)
+else
+USER="INVALID"
+LIFETIME=0
+fi
 
 HEADER='{"alg":"RS256","typ":"JWT"}'
 
-payload='{ "iss": "'$1'", "aud": "'$2'", "sub": "'$3'" }'
+payload='{ "iss": "'$USER'", "aud": "'$AUDIENCE'", "sub": "'$SUBJECT'" }'
 
 # Use jq to set the dynamic `iat` and `exp`
 # fields on the payload using the current time.
@@ -14,7 +24,7 @@ echo "${payload}" | jq --arg uuid_str "$(uuidgen)" --arg time_str "$(date +%s)" 
   '
   ($time_str | tonumber) as $time_num
   | .iat=$time_num
-  | .exp=($time_num + 60 * 60 * '$4')
+  | .exp=($time_num + 60 * 60 * '$LIFETIME')
   | .jti=$uuid_str
   '
 )

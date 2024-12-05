@@ -1,54 +1,52 @@
-function extract_variables() { #{{{
-    local encoded_string="$1"
-    
-    # Split the string into key-value pairs
-    IFS='&' read -ra pairs <<< "$encoded_string"
-    
-    declare -A variables
-    
-    for pair in "${pairs[@]}"; do
-        if [ -n "$pair" ]; then
-            key="${pair%%=*}"
-            value="${pair#*=}"
-            
-            # Decode the value
-            decoded_value=$(echo "$value" | sed 's/+/%20/g; s/%\([0-9a-f]\{2\}\)/\\x\1/g')
-            
-            # Add the decoded key-value pair to the array
-            variables["$key"]="$decoded_value"
-        fi
-    done
 
-    USER=${variables["user"]}
-    HASH=${variables["hash"]}
-    PRU=${variables["idlist"]}
-    REQUEST=${variables["request"]}
-    LIFETIME=${variables["lifetimeDays"]}
-
-    # Print the extracted variables
-    #for key in "${!variables[@]}"; do
-    #    echo "$key=${variables[$key]}"
-    #done
-}
-#}}}
-
-extract_variables "$QUERY_STRING"
+OBJ=$(echo $QUERY_STRING | base64 -d)
+USER=$(echo $OBJ | jq -r .usr)
+HASH=$(echo $OBJ | jq -r .hash)
+IDHASH=$(echo $OBJ | jq -r .idHash)
+AUDIENCE=$(echo $OBJ | jq -r .aud)
+SUBJECT=$(echo $OBJ | jq -r .sub)
+LIFETIME=$(echo $OBJ | jq -r .life)
+RESPONSE=$(echo $OBJ | jq -r .response)
 
 DBUSERHASH=$(sqlite3 database.db  "select pwdhash from users where username='$USER';")
 DBCERT=$(sqlite3 database.db  "select cert from users where username='$USER';")
+DBCERTHASH=$(sqlite3 database.db  "select cert from users where username='$USER';" | sha256sum | cut -d ' ' -f1)
 
+#echo $OBJ
 #echo $USER
 #echo $HASH
+#echo $IDHASH
+#echo $AUDIENCE
+#echo $SUBJECT
+#echo $LIFETIME
+#echo $RESPONSE
+#echo $DBUSERHASH
 #echo $DBCERTHASH
-
-TOK=$(./jwtgen.sh $USER)  
-
-# Encrypt the token with the user's mobile DevID cert public key
-
-echo $DBCERT | openssl rsa -in - -pubout
+#echo $DBCERT
 
 
-echo $TOK
+# Initiate  a challenge-response
+if [[ -z $RESPONSE ]]; then
+    ./check-user.sh $QUERY_STRING
+else
+    # Check if the nonce was properly decrypted
+    if [[ -e /tmp/NONCE ]]; then
+        NONCE=$(cat /tmp/NONCE)
+    fi
+    #rm -f /tmp/NONCE
+    if [[ "$NONCE" == "$RESPONSE" ]]; then
+        # Return SUCCESS
+        # Create the token
+        TOK=$(./jwtgen.sh $QUERY_STRING)  
+        JSON_RET=$(printf '{"token": "%s", "res": "%s"}' $TOK "0" )
+    else
+        # FAIL
+        # Return empty token
+        TOK=$(./jwtgen.sh )  
+        JSON_RET=$(printf '{"token": "%s", "res": "%s"}' $TOK "r10" )
+    fi
+    
 
-#echo 0
+    echo $JSON_RET
+fi
 

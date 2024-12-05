@@ -157,8 +157,17 @@ async function ticketClick() //{{{
         // Only way to get here is to be a valid user with valid creds and a valid devId cert for the mobile.
         console.log("Ticket click!");
         
-        var XX = await getTicketFromServer("https://ne201.com/s/ticket-req.sh", userId, userHash, ticketIdList.value, ticketRequest.value, ticketLifetimeDays.value);
+        devId = localStorage.getItem("ne201_devId");
+        
+        // iGet hash to check
+        if (null == devId)
+            devIdHash="";
+        else
+            devIdHash = await computeSHA256(devId+'\n');
+        
+        var XX = await getTicketFromServer("https://ne201.com/s/ticket-req.sh", userId, userHash, devIdHash, ticketIdList.value, ticketRequest.value, ticketLifetimeDays.value);
 
+        ticketStatus.textContent = XX.token;
     }
 }
 //}}}
@@ -193,37 +202,37 @@ async function checkLoginOnServer(url, user, pwd, devIdHash) { //{{{
     return res;
 }
 //}}}
-async function getTicketFromServer(url, user, pwd, idList, request, lifetime) { //{{{
+async function getTicketFromServer(url, user, pwd, idevIdHash, audience, subject, lifetime) { //{{{
 
-  // construct the url
-  const encodedUrl = `${url}?user=${user}&hash=${pwd}&idlist=${idList}&request=${request}&lifetime=${lifetime}`;
+    obj = {usr:user, hash:pwd, idHash:devIdHash, aud:audience, sub:subject, life:lifetime, response:""};  
+    res = await toServer(url, obj);
 
-  try {
-    // Send the request using Fetch API
-    const response = await fetch(encodedUrl, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      }
-    });
+    // At this point res ishould contain a challenge nonce
+     
+    // Invalid credentials, we have no nonce to decrypt, return as is
+    if (res.nonce == "" ) return res; 
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    // We got a challenge ... try to decrypt and send response
+    const encodedNonce = hexStringToArrayBuffer(res.nonce);
+    const encodedKey = hexStringToArrayBuffer(res.key);
+    const priv = await importPrivateKey(localStorage.getItem("ne201_kprv"));
+    try {
+        var decodedKey = new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'RSA-OAEP', }, priv, encodedKey));
+        var decodedNonce = new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'RSA-OAEP', }, priv, encodedNonce));
+        }
+    catch {
+        var decodedKey="x";
+        var decodedNonce="x";
     }
 
-    console.log('TICKET REQUEST SENT');
+    // Send the decoded nonce back for verification
+    obj.response = decodedNonce;
+    res = await toServer(url, obj);
 
-    const x = dec.decode(await response.arrayBuffer());
-
-    console.log(x);
-  
-    var kpub = KEYUTIL.getKey(localStorage.getItem("ne201_kpub"));
-    var kprv = KEYUTIL.getKey(localStorage.getItem("ne201_kprv"), userHash);
-
-    return x;
-  } catch (error) {
-    console.log("NO connection to server!");
-  }
+    // Copy back the decoded symmetric key
+    res.key = decodedKey;
+    
+    return res;
 }
 //}}}
 
