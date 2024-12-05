@@ -47,11 +47,17 @@ const ticketStatus = document.getElementById("ticketStatus");
 const ticketIdList = document.getElementById("ticket_idlist");
 const ticketRequest = document.getElementById("ticket_request");
 const ticketLifetimeDays = document.getElementById("ticket_lifetimeDays");
+const ticketUser = document.getElementById("ticket_username");
+const ticketPwd = document.getElementById("ticket_password");
 
 connectButton.addEventListener("click", connectClick);
 provButton.addEventListener("click", provClick);
 ticketButton.addEventListener("click", ticketClick);
 //}}}
+
+loginMainButton.style.visibility = "hidden";
+provButton.style.visibility = "hidden";
+provStatus.style.visibility = "hidden";
 
 // LOGIN & LDevId for mobile
 async function loginClick() //{{{
@@ -149,6 +155,10 @@ async function logoutClick(msg) //{{{
 // Request a ticket
 async function ticketClick() //{{{
 {
+        // The current user
+        userId = ticketUser.value;
+        // The currennt hash
+        userHash = await computeSHA256(ticketPwd.value);
     if (userId == null) {
         console.log("NO User!");
         return;
