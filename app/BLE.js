@@ -83,23 +83,24 @@ async function loginClick() //{{{
 
         // Validate credentials & WDevID + nonce challenge response
         // If SUCCESS, returned object contains a symmetric key ans a "0" result
-        XX = await checkLoginOnServer("https://ne201.com/s/check-user.sh", userId, userHash, devIdHash);
-        console.log("LOGIN: "+XX.res);
+        res = await checkLoginOnServer("https://ne201.com/s/check-user.sh", userId, userHash, devIdHash);
+        console.log("LOGIN: "+res.res);
    
-        if (XX.res == 1) {
+        if (res.res == 1) {
             // Credentials invalid
-            logoutClick();
+            logoutClick(res.key);
             return;
         }
-        else if (XX.res == 2) {
+        else if (res.res == 2) {
             // Credentials valid, but no remote cert.
             // WORKER ONBOARDING 
             localStorage.removeItem("ne201_devId");
             try {
                 // Obtain a WDevID cert
                 await syncDevId(userId, userHash);
+                loginStatus.textContent = userID + " onboarded OK";
             } catch (error) {
-                logoutClick();
+                logoutClick("BAD ID SYNC");
                 return;
             }
         
@@ -107,14 +108,14 @@ async function loginClick() //{{{
 
             //return;
         }
-        else if (XX.res == 0) {
+        else if (res.res == 0) {
             // 
             loginStatus.textContent = "OK " + userId;
             return;
         } 
         else {
             // Anything else
-            logoutClick();
+            logoutClick(res.key);
             return;
         }
         
@@ -127,13 +128,17 @@ async function loginClick() //{{{
     }
 }
 //}}}
-async function logoutClick() //{{{
+async function logoutClick(msg) //{{{
 {
     console.log("User "+ userId + " logged out");
     loginMainButton.attributes["data-bs-toggle"].value="modal";
     loginMainButton.removeEventListener("click", logoutClick);
     loginMainButton.textContent = "Login";
-    loginStatus.textContent = "";
+    if (msg.pointerId == undefined) 
+        loginStatus.textContent = msg;
+    else
+        loginStatus.textContent = "";
+
     loginHash = null;
     loginCert = null;
     userId = null;
@@ -170,46 +175,22 @@ async function checkLoginOnServer(url, user, pwd, devIdHash) { //{{{
     const encodedNonce = hexStringToArrayBuffer(res.nonce);
     const encodedKey = hexStringToArrayBuffer(res.key);
     const priv = await importPrivateKey(localStorage.getItem("ne201_kprv"));
-    const decodedKey = new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'RSA-OAEP', }, priv, encodedKey));
-    const decodedNonce = new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'RSA-OAEP', }, priv, encodedNonce));
-    
+    try {
+        var decodedKey = new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'RSA-OAEP', }, priv, encodedKey));
+        var decodedNonce = new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'RSA-OAEP', }, priv, encodedNonce));
+        }
+    catch {
+        var decodedKey="x";
+        var decodedNonce="x";
+    }
+
     // Send the decoded nonce back for verification
     obj.response = decodedNonce;
     res = await toServer(url, obj);
 
+    // Copy back the decoded symmetric key
     res.key = decodedKey;
     return res;
-
-  try {
-    // Send the request using Fetch API
-    const response = await fetch(encodedUrl, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    console.log('CREDS SENT');
-
-    const x = dec.decode(await response.arrayBuffer());
-
-    return x;
-  } catch (error) {
-    console.log("TRYING LOCAL login...");
-    if (user == localStorage.getItem("ne201_userId")) {
-        if (pwd == localStorage.getItem("ne201_userHash")) {
-            return "0";
-        } else {
-            return "1";
-        }
-    } else {
-        return "1";
-    }
-  }
 }
 //}}}
 async function getTicketFromServer(url, user, pwd, idList, request, lifetime) { //{{{

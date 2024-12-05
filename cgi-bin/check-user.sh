@@ -52,18 +52,18 @@ if [[ $HASH == $DBUSERHASH ]]; then
                     # Return SUCCESS
                     JSON_RET=$(printf '{"key": "%s", "nonce": "%s", "res": "%s"}' "NONCE OK" "" "0" )
                 else
-                    JSON_RET=$(printf '{"key": "%s", "nonce": "%s", "res": "%s"}' "NONCE FAIL" "" "1" )
+                    JSON_RET=$(printf '{"key": "%s", "nonce": "%s", "res": "%s"}' "BAD MOBILE: key" "" "2" )
                 fi
 
                 rm -f /tmp/NONCE
                 echo -n $JSON_RET
             fi
         else
-            JSON_RET=$(printf '{"key": "INVALID ID HASH", "res": "1"}') 
+            JSON_RET=$(printf '{"key": "BAD MOBILE: id", "nonce":"", "res": "3"}') 
             echo -n $JSON_RET
         fi
     fi
 else
-    JSON_RET=$(printf '{"key": "BAD CREDENTIALS", "res": "1"}')
+    JSON_RET=$(printf '{"key": "BAD CREDENTIALS", "nonce": "",  "res": "1"}')
     echo -n $JSON_RET
 fi
