@@ -8,15 +8,20 @@ AUDIENCE=$(echo $OBJ | jq -r .aud)
 SUBJECT=$(echo $OBJ | jq -r .sub)
 LIFETIME=$(echo $OBJ | jq -r .life)
 
-CERT=$(echo "$2" | base64 -d)
+CERT=$(echo "$2" | base64 -d | base64 -w0)
 else
 USER="INVALID"
 LIFETIME=0
 fi
 
+TRUSTED=$(cat PKI/SELF_PKI/ca/is-ca.pub | base64 -w0) 
+
+
+
 HEADER='{"alg":"RS256","typ":"JWT"}'
 
-payload='{ "iss": "'$USER'", "aud": "'$AUDIENCE'", "sub": "'$SUBJECT'", "worker":"'$WORKER'", "wdevid":"'$CERT'" }'
+#payload='{ "iss": "'$USER'", "aud": "'$AUDIENCE'", "sub": "'$SUBJECT'", "trustedkey":"'$TRUSTED'", "worker":"'$WORKER'", "wdevid":"'$CERT'" }'
+payload='{ "iss": "'$USER'", "aud": "'$AUDIENCE'", "sub": "'$SUBJECT'", "trustedkey":"'$TRUSTED'", "worker":"'$WORKER'", "wdevid":"'$CERT'" }'
 
 # Use jq to set the dynamic `iat` and `exp`
 # fields on the payload using the current time.
