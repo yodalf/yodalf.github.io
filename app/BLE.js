@@ -76,7 +76,7 @@ async function loginClick() //{{{
         console.log("Initiate login for user " + userId + " ... with PWD-256: " + userHash);
         loginMainButton.attributes["data-bs-toggle"].value="";
         loginMainButton.addEventListener("click", logoutClick);
-        loginMainButton.textContent = "Worker onboarding";
+        loginMainButton.textContent = "Worker Onboarding";
 
         // Get the WDevID cert if available
         //devId = localStorage.getItem("ne201_devId")+'\n';
@@ -738,7 +738,7 @@ async function unlockPKCS12(filePath, password) { //{{{
 async function connectManager() //{{{
 {
 
-    connectionStatus.textContent = "...";
+    accessStatus.textContent = "...";
 
     try {
          let options = {
@@ -755,11 +755,11 @@ async function connectManager() //{{{
         
 
         device = await navigator.bluetooth.requestDevice(options)
-            .catch((error) => { console.error(`ERR: ${error}`); connectionStatus.textContent = "CANCELLED"; } );
+            .catch((error) => { console.error(`ERR: ${error}`); accessStatus.textContent = "CANCELLED"; } );
        
 
         connectedDevice = await device.gatt.connect();
-        connectionStatus.textContent = "Connected!";  
+        accessStatus.textContent = "Connected!";  
         connectButton.textContent = "Disconnect";
         device.addEventListener('gattserverdisconnected', serviceDisconnect);
 
@@ -776,9 +776,9 @@ async function connectManager() //{{{
 
     }
     catch(error) {
-        //connectionStatus.textContent = "CANCELLED "+error;  
+        //accessStatus.textContent = "CANCELLED "+error;  
         device = null;
-        connectionStatus.textContent = "CANCELLED";  
+        accessStatus.textContent = "CANCELLED";  
     };
 
 }
