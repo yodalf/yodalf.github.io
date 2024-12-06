@@ -352,7 +352,7 @@ async function provClick() //{{{
 }
 //}}}
 
-async function toServer(url, obj) {
+async function toServer(url, obj) { //{{{
     // Send an object to a server
  
     const encodedObj = stob64u(JSON.stringify(obj));
@@ -378,14 +378,20 @@ async function toServer(url, obj) {
       console.error('Error ', error);
       }
 }
+//}}}
 
-function fromServer(str) {
-    // Receive an object from a server 
-}
-
-function arrayBufToString(buf) {
+function str2ab(str) { //{{{
+    const buffer = new Uint8Array(str.length);
+    for (let i = 0; i < str.length; i++) {
+      buffer[i] = str.charCodeAt(i);
+    }
+    return buffer;
+  }
+//}}}
+function ab2str(buf) { //{{{
 	return String.fromCharCode.apply(null, new Uint8Array(buf));
 }
+//}}}
 
 function pemEncode(label, data) {
 	const base64encoded = window.btoa(data);
@@ -395,7 +401,7 @@ function pemEncode(label, data) {
 
 async function exportKeyAsString(format, key) {
 	const exported = await window.crypto.subtle.exportKey(format, key);
-	return arrayBufToString(exported);
+	return ab2str(exported);
 }
 
 async function pemEncodePrivateKey(keyPair) {
@@ -580,13 +586,6 @@ function _base64StringToArrayBuffer(b64str) {
   return bytes.buffer
 }
 
-function str2ab(str) {
-    const buffer = new Uint8Array(str.length);
-    for (let i = 0; i < str.length; i++) {
-      buffer[i] = str.charCodeAt(i);
-    }
-    return buffer;
-  }
 
 function _convertPemToArrayBuffer(pem) {
   const lines = pem.split('\n')
