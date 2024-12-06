@@ -36,6 +36,9 @@ const connectButton = document.getElementById("connectButton");
 const connectionStatus = document.getElementById("connectionStatus");
 const deviceName = document.getElementById("deviceNameInput");
 
+const accessButton = document.getElementById("accessButton");
+const accessToken = document.getElementById("access_token");
+const accessStatus = document.getElementById("accessStatus");
 
 const provButton = document.getElementById("provButton");
 const provStatus = document.getElementById("provStatus");
@@ -51,8 +54,7 @@ const ticketUser = document.getElementById("ticket_username");
 const ticketPwd = document.getElementById("ticket_password");
 const ticketWorker = document.getElementById("ticket_worker");
 
-connectButton.addEventListener("click", connectClick);
-provButton.addEventListener("click", provClick);
+accessButton.addEventListener("click", connectClick);
 ticketButton.addEventListener("click", ticketClick);
 //}}}
 
