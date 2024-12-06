@@ -3,6 +3,7 @@ if [[ -n "$1" ]]; then
 OBJ=$(echo $1 | base64 -d)
 USER=$(echo $OBJ | jq -r .usr)
 IDHASH=$(echo $OBJ | jq -r .idHash)
+WORKER=$(echo $OBJ | jq -r .w)
 AUDIENCE=$(echo $OBJ | jq -r .aud)
 SUBJECT=$(echo $OBJ | jq -r .sub)
 LIFETIME=$(echo $OBJ | jq -r .life)
@@ -15,7 +16,7 @@ fi
 
 HEADER='{"alg":"RS256","typ":"JWT"}'
 
-payload='{ "iss": "'$USER'", "aud": "'$AUDIENCE'", "sub": "'$SUBJECT'", "wdevid":"'$CERT'" }'
+payload='{ "iss": "'$USER'", "aud": "'$AUDIENCE'", "sub": "'$SUBJECT'", "worker":"'$WORKER'", "wdevid":"'$CERT'" }'
 
 # Use jq to set the dynamic `iat` and `exp`
 # fields on the payload using the current time.

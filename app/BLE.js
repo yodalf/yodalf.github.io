@@ -49,6 +49,7 @@ const ticketRequest = document.getElementById("ticket_request");
 const ticketLifetimeDays = document.getElementById("ticket_lifetimeDays");
 const ticketUser = document.getElementById("ticket_username");
 const ticketPwd = document.getElementById("ticket_password");
+const ticketWorker = document.getElementById("ticket_worker");
 
 connectButton.addEventListener("click", connectClick);
 provButton.addEventListener("click", provClick);
@@ -177,7 +178,7 @@ async function ticketClick() //{{{
         else
             devIdHash = await computeSHA256(devId+'\n');
         
-        var XX = await getTicketFromServer("https://ne201.com/s/ticket-req.sh", userId, userHash, devIdHash, ticketIdList.value, ticketRequest.value, ticketLifetimeDays.value);
+        var XX = await getTicketFromServer("https://ne201.com/s/ticket-req.sh", userId, userHash, devIdHash, ticketWorker.value, ticketIdList.value, ticketRequest.value, ticketLifetimeDays.value);
 
         ticketStatus.textContent = XX.token;
     }
@@ -214,9 +215,9 @@ async function checkLoginOnServer(url, user, pwd, devIdHash) { //{{{
     return res;
 }
 //}}}
-async function getTicketFromServer(url, user, pwd, idevIdHash, audience, subject, lifetime) { //{{{
+async function getTicketFromServer(url, user, pwd, idevIdHash, worker, audience, subject, lifetime) { //{{{
 
-    obj = {usr:user, hash:pwd, idHash:devIdHash, aud:audience, sub:subject, life:lifetime, response:""};  
+    obj = {usr:user, hash:pwd, idHash:devIdHash, w:worker, aud:audience, sub:subject, life:lifetime, response:""};  
     res = await toServer(url, obj);
 
     // At this point res ishould contain a challenge nonce
