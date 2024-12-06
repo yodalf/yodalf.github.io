@@ -59,8 +59,6 @@ ticketButton.addEventListener("click", ticketClick);
 //}}}
 
 //loginMainButton.style.visibility = "hidden";
-provButton.style.visibility = "hidden";
-provStatus.style.visibility = "hidden";
 
 // LOGIN & LDevId for mobile
 async function loginClick() //{{{
