@@ -13,6 +13,10 @@ var receivedCerts;
 
 var dec = new TextDecoder();
 
+var bufIndex = 0;
+var bufSize = 0;
+var bufData;
+
 var certIndex = 0;
 var certSize = 0;
 var currentCert = 0;
@@ -54,7 +58,7 @@ const ticketUser = document.getElementById("ticket_username");
 const ticketPwd = document.getElementById("ticket_password");
 const ticketWorker = document.getElementById("ticket_worker");
 
-accessButton.addEventListener("click", connectClick);
+accessButton.addEventListener("click", accessClick);
 ticketButton.addEventListener("click", ticketClick);
 //}}}
 
@@ -337,6 +341,22 @@ async function connectClick() //{{{
     }
     else {
         connectManager();
+    }
+}
+//}}}
+async function accessClick() //{{{
+{
+    if (device) {
+        if (device.gatt.connected) {
+            device.gatt.disconnect();
+        }
+        else
+        {
+            accessManager();
+        }
+    }
+    else {
+        accessManager();
     }
 }
 //}}}
@@ -782,6 +802,223 @@ async function connectManager() //{{{
 
 }
 //}}}
+async function accessManager() //{{{
+{
+
+    accessStatus.textContent = "...";
+
+    try {
+         let options = {
+             acceptAllDevices: true,
+             optionalServices: ["00aabbbb-0001-0000-0001-000000000001"] ,
+ 
+             //filters: [
+             //    { namePrefix: "Hello" },
+             //    { namePrefix: "A" },
+             //    { namePrefix: "B" },
+             //    { services: ["00aabbbb-0001-0000-0001-000000000001"] },
+            //],
+        };
+        
+
+        device = await navigator.bluetooth.requestDevice(options)
+            .catch((error) => { console.error(`ERR: ${error}`); accessStatus.textContent = "CANCELLED"; } );
+       
+
+        connectedDevice = await device.gatt.connect();
+        accessStatus.textContent = "Connected!";  
+        device.addEventListener('gattserverdisconnected', serviceDisconnect);
+
+        // Connect to our service and characteristic
+        idService = await connectedDevice.getPrimaryService( "00aabbbb-0001-0000-0001-000000000001" );
+
+        idChar = await idService.getCharacteristic("00aabbbb-0001-0001-0001-000000000004");
+
+        // Prep our notification handler
+        idChar.addEventListener('characteristicvaluechanged', tokenValueChanged);
+        await idChar.startNotifications();
+        
+        tokenManager();
+
+    }
+    catch(error) {
+        //accessStatus.textContent = "CANCELLED "+error;  
+        device = null;
+        accessStatus.textContent = "CANCELLED";  
+    };
+
+}
+//}}}
+async function tokenManager() //{{{
+{
+
+    bufData = accessToken.value; 
+    console.log("SENDING TOKEN: " + bufData);
+
+    try
+    {
+        if ( provState == 0)
+            {
+
+            // We start sending a new token
+            provState = 3;
+
+            // Send a CMD_PUSH_TOKEN request    
+            accessStatus.textContent = "Sending token";  
+            let utf8Encode = new TextEncoder();
+            // The first 240 bytes
+            var xx = new Uint8Array([0x04, 0x00, 240]);
+            var yy = new Uint8Array(utf8Encode.encode(bufData));
+            bufSize = yy.length;
+            bufIndex = 240;
+            yy = new Uint8Array(utf8Encode.encode(bufData.slice(0,240)));
+            let zz = new Uint8Array(xx.length + yy.length);
+            zz.set(xx);
+            zz.set(yy, xx.length);
+            await idChar.writeValue(zz);
+            
+            //await device.gatt.disconnect();
+            }
+    }
+    catch(error) {
+        //connectionStatus.textContent = "CANCELLED "+error; 
+        provState = 0;
+        provStatus.textContent = "CANCELLED";  
+    };
+
+}
+//}}}
+async function tokenValueChanged(event) //{{{
+{
+    const value = event.target.value;
+
+    if (provState == 0)
+    {
+        console.log("provState is 0 ... device being factory reset");
+    }  else if (provState == 1)
+    {
+        let b = new Uint8Array(value.buffer); 
+        if ((b[0] & 0xf0)  == 0x10)
+        {
+            if( (b[0] & 0x0f) != 0x00) 
+            {
+                provBuf = dec.decode(b.slice(3,3+b[1]));
+                idCertType = b[0] & 0x0f;
+            }
+            else
+                provBuf = provBuf + dec.decode(b.slice(3,3+b[1]));
+        
+            // Send a CMD_ACK request    
+            let xx = Uint8Array.of(0x10); 
+            idChar.writeValue(xx);
+
+        } else if (b[0] == 0x80)
+        {
+            if (idCertType == 0x01) // IDevID
+            {
+                console.log("DevID from device:");
+                console.log(provBuf);
+                provState = 99;
+                currentCert = 0;
+                provStatus.textContent = "Device Provisioned";
+                provButton.textContent = "Factory Reset";
+
+            } else if (idCertType == 0x02) // CSR
+            {
+                provState++;
+                provStatus.textContent = "CSR sent";  
+
+                // provBuf contains a CSR . Build string to send to auth server
+                //console.log(provBuf);            
+                await sendPEMtoServer("https://ne201.com/s/is-sign-csr.sh", provBuf);
+
+                // We got 4 certs back: ROOT, IS, AS, IDevID
+                // in the 'receivedCerts' variable
+                provState++;
+
+                console.log("ROOT certificate received from CA: ");
+                console.log(receivedCerts[0]);
+                console.log("Identity Issuer certificate received from CA: ");
+                console.log(receivedCerts[1]);
+                console.log("New DevID certificate received from CA: ");
+                console.log(receivedCerts[3]);
+
+
+                // Validate the certs
+                // TODO
+
+                // Start sending ROOT (currentCert == 0) to the device via BLE
+                provStatus.textContent = "Provisioning Cert "+currentCert;  
+                let utf8Encode = new TextEncoder();
+                // The first 240 bytes
+                var xx = new Uint8Array([0x02, 0x00 | currentCert, 240]);
+                var yy = new Uint8Array(utf8Encode.encode(receivedCerts[currentCert]));
+                certSize = yy.length;
+                certIndex = 240;
+                yy = new Uint8Array(utf8Encode.encode(receivedCerts[currentCert]).slice(0,240));
+                let zz = new Uint8Array(xx.length + yy.length);
+                zz.set(xx);
+                zz.set(yy, xx.length);
+                await idChar.writeValue(zz);
+            }
+            else
+            {
+                provState = 0;
+                currentCert = 0;    
+                provStatus.textContent = "Unknown state";  
+                provButton.textContent = "Factory Reset";
+            }
+        }
+    }  else if (provState == 3)
+    {
+        // CONTINUE sending the token
+        let b = new Uint8Array(value.buffer); 
+        if ((b[0] & 0xf0)  == 0x10)
+        {
+            let utf8Encode = new TextEncoder();
+            // The next bytes
+            if (0 >= (bufSize - bufIndex)) {
+                // Finish ... no more bytes to send
+                var xx = new Uint8Array([0x04, 0x20, 0]);
+                yy = new Uint8Array([]);
+                bufIndex = bufSize;
+            } else {
+                if (240 < bufSize - bufIndex)
+                {
+                    // Still more than 240
+                    var xx = new Uint8Array([0x04, 0x10, 240]);
+                    yy = new Uint8Array(utf8Encode.encode(bufData.slice(bufIndex,bufIndex+240)));
+                    bufIndex += 240;
+                }
+                else
+                {
+                    // Last bytes
+                    var xx = new Uint8Array([0x04, 0x20, bufSize - bufIndex]);
+                    yy = new Uint8Array(utf8Encode.encode(bufData.slice(bufIndex,bufSize)));
+                    bufIndex = bufSize;
+                }
+            }
+            let zz = new Uint8Array(xx.length + yy.length);
+            zz.set(xx);
+            zz.set(yy, xx.length);
+            await idChar.writeValue(zz);
+
+        } else if (b[0] == 0x80)
+        {
+            // The end
+            provState = 99;
+            accessStatus.textContent = "Done";  
+            await device.gatt.disconnect();
+        }
+
+    }  
+       else
+    {
+        console.log("TBC...");
+        provBuf=null;
+    }
+}
+//}}}
 async function provManager() //{{{
 {
     try
@@ -914,11 +1151,11 @@ async function serviceDisconnect(event) //{{{
     connectedDevice = null;
     provState = 0;
     provBuf = null;
-    provStatus.textContent = "...";  
+    //provStatus.textContent = "...";  
 
     console.log(`Device ${tgt.name} is disconnected.`);
-    connectionStatus.textContent = "IDLE";
-    connectButton.textContent = "Connect";
+    //connectionStatus.textContent = "IDLE";
+    //connectButton.textContent = "Connect";
 }
 //}}}
 async function idValueChanged(event) //{{{
