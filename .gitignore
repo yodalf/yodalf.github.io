@@ -3,3 +3,10 @@
 *.pem
 TEST
 TMP
+is-index.txt
+is-index.txt.old
+is-serial.txt
+is-serial.txt.old
+rnd
+database.db
+
