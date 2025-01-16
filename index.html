@@ -176,41 +176,59 @@
   <header class="d-flex align-items-center pb-3 mb-5 border-bottom">
     <a href="/" class="d-flex align-items-center text-body-emphasis text-decoration-none">
       <svg class="bi me-2" width="40" height="32"><use xlink:href="#bootstrap"/></svg>
-      <span class="fs-4">NE201 PoC</span>
+      <span class="fs-1">NE201 PoC</span>
     </a>
   </header>
 
   <main>
 
+    <!-- iPre-requisites -->
+    <span class="fs-2"><u>PRE-REQUISITES</u><br></span>
+    <span class="fs-5"><br>(1) Worker is provided credentials by the asset owner.<br></span>
+    <span class="fs-5">(2-a) EITHER devices are on-boarded into the asset database via an LDevID <br></span>
+    <span class="fs-5">(2-b) OR devices store the JWT signing authority chain from the JWT token when first accessed after a factory reset.<br></span>
+    <br><br>
     <!-- LOGIN -->
-    <button type="button" id="loginMainButton" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#loginModal">Worker Onboarding</button>
+    <span class="fs-2"><u>Access administration (plant premises)</u><br></span>
+    <span class="fs-5"><br>This onboards the worker's mobile in the asset databases (via WiFi).<br></span>
+    <span class="fs-5">Should only have to be done once.<br></span>
+   
+    <div class="row">
+      <div class="col-6 gy-2">
 
-    <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="loginModalLabel">Worker Onboarding</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form>
-                        <div class="mb-3">
-                            <label for="username" class="form-label">Username</label>
-                            <input type="text" class="form-control" id="login_username" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="password" class="form-label">Password</label>
-                            <input type="password" class="form-control" id="login_password" required>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" id="loginButton" class="btn btn-primary" data-bs-dismiss="modal">Login</button>
+        <button type="button" id="loginMainButton" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#loginModal">Worker Onboarding</button>
+        <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="loginModalLabel">Worker Credentials</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form>
+                    </div>
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Username</label>
+                                <input type="text" class="form-control" id="login_username" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Password</label>
+                                <input type="password" class="form-control" id="login_password" required>
+                            </div>
+                        </form>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" id="loginButton" class="btn btn-primary" data-bs-dismiss="modal">Login</button>
+                    </div>
                 </div>
             </div>
         </div>
+
+      </div>
     </div>
+
+
+
 
       <div class="row">
         <div class="col-6 gy-4" > <h5 id="loginStatus"></h5>
@@ -219,9 +237,13 @@
 
 
     <!-- TICKET -->
+    <span class="fs-5"><br>An asset owner requests an "Access Token" for a worker.<br></span>
+    <span class="fs-5">The token is stored in the asset DB for later retrieval by the worker.<br></span>
+    <span class="fs-5">The token is not confidential and can be sent via email to the worker.<br></span>
+    <span class="fs-5">For this demo we just copy-paste the token.<br></span>
       <div class="row">
-        <div class="col-2 gy-2">
-    <button type="button" id="ticketMainButton" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#ticketModal">Request Access Token</button>
+        <div class="col-6 gy-2">
+    <button type="button" id="ticketMainButton" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#ticketModal">Access Administration</button>
         </div>
       </div>
     
@@ -243,16 +265,16 @@
                             <input type="password" class="form-control" id="ticket_password" required>
                         </div>
                         <div class="mb-3">
-                            <label for="worker" class="form-label">Worker Username</label>
+                            <label for="worker" class="form-label">Worker Username (ID)</label>
                             <input type="text" class="form-control" id="ticket_worker" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="request" class="form-label">OPC Role</label>
+                            <input type="text" class="form-control" id="ticket_request" required>
                         </div>
                         <div class="mb-3">
                             <label for="pru" class="form-label">Audience</label>
                             <input type="text" class="form-control" id="ticket_idlist" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="request" class="form-label">Subject</label>
-                            <input type="text" class="form-control" id="ticket_request" required>
                         </div>
                         <div class="mb-3">
                             <label for="life" class="form-label">Life time (days)</label>
@@ -274,9 +296,13 @@
       </div>
     
       <!-- DEVICE ACCESS -->
+      <span class="fs-2"><u><br>Field work (bluetooth, no internet)</u><br></span>
+      <span class="fs-5"><br>Worker uses mobile to access the device.<br></span>
+      <span class="fs-5">The device only accepts a properly signed token, issued to that specific mobile/worker, unlocked by the worker's credentials.<br></span>
+   
       <div class="row">
-        <div class="col-2 gy-2">
-    <button type="button" id="accessMainButton" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#accessModal">Access Device</button>
+        <div class="col-6 gy-2">
+    <button type="button" id="accessMainButton" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#accessModal">Device Access</button>
         </div>
       </div>
     
@@ -290,6 +316,15 @@
                 <div class="modal-body">
                     <form>
                         <div class="mb-3">
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Username</label>
+                                <input type="text" class="form-control" id="login_username" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Password</label>
+                                <input type="password" class="form-control" id="login_password" required>
+                            </div>
+                        </form>
                             <label for="token" class="form-label">Token</label>
                             <input type="text" class="form-control" id="access_token" required>
                         </div>
