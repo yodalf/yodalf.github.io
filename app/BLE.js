@@ -885,7 +885,7 @@ async function tokenManager() //{{{
     catch(error) {
         //connectionStatus.textContent = "CANCELLED "+error; 
         provState = 0;
-        provStatus.textContent = "CANCELLED";  
+        //provStatus.textContent = "CANCELLED";  
     };
 
 }
@@ -922,13 +922,13 @@ async function tokenValueChanged(event) //{{{
                 console.log(provBuf);
                 provState = 99;
                 currentCert = 0;
-                provStatus.textContent = "Device Provisioned";
-                provButton.textContent = "Factory Reset";
+                //provStatus.textContent = "Device Provisioned";
+                //provButton.textContent = "Factory Reset";
 
             } else if (idCertType == 0x02) // CSR
             {
                 provState++;
-                provStatus.textContent = "CSR sent";  
+                //provStatus.textContent = "CSR sent";  
 
                 // provBuf contains a CSR . Build string to send to auth server
                 //console.log(provBuf);            
@@ -950,7 +950,7 @@ async function tokenValueChanged(event) //{{{
                 // TODO
 
                 // Start sending ROOT (currentCert == 0) to the device via BLE
-                provStatus.textContent = "Provisioning Cert "+currentCert;  
+                //provStatus.textContent = "Provisioning Cert "+currentCert;  
                 let utf8Encode = new TextEncoder();
                 // The first 240 bytes
                 var xx = new Uint8Array([0x02, 0x00 | currentCert, 240]);
@@ -967,7 +967,7 @@ async function tokenValueChanged(event) //{{{
             {
                 provState = 0;
                 currentCert = 0;    
-                provStatus.textContent = "Unknown state";  
+                //provStatus.textContent = "Unknown state";  
                 provButton.textContent = "Factory Reset";
             }
         }
@@ -1054,14 +1054,13 @@ async function tokenValueChanged(event) //{{{
             zz.set(yy, xx.length);
             await idChar.writeValue(zz);
 
-        } else if (b[0] == 0x80)
-        {
+        } 
+
+    }  else if (provState == 5) {
             // The end
             provState = 99;
             accessStatus.textContent = "Done";  
             await device.gatt.disconnect();
-        }
-
     }  else
     {
         console.log("TBC...");
@@ -1083,7 +1082,7 @@ async function provManager() //{{{
         let xx = Uint8Array.of(1); 
         await idChar.writeValue(xx);
         
-        provStatus.textContent = "Get ID cert";  
+        //provStatus.textContent = "Get ID cert";  
 
         //await device.gatt.disconnect();
         }
@@ -1240,8 +1239,8 @@ async function idValueChanged(event) //{{{
                 console.log(provBuf);
                 provState = 99;
                 currentCert = 0;
-                provStatus.textContent = "Device Provisioned";
-                provButton.textContent = "Factory Reset";
+                //provStatus.textContent = "Device Provisioned";
+                //provButton.textContent = "Factory Reset";
 
             } else if (idCertType == 0x02) // CSR
             {
