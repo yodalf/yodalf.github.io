@@ -1033,7 +1033,8 @@ async function tokenValueChanged(event) //{{{
             const priv = await importPrivateKey(localStorage.getItem("ne201_kprv"));
             try {
                 var c_ab = challenge.buffer;
-                var decodedNonce = new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'RSA-OAEP', }, priv, c_ab));
+                //var decodedNonce = new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'RSA-OAEP', }, priv, c_ab));
+                var decodedNonce = await crypto.subtle.decrypt({ name: 'RSA-OAEP', }, priv, c_ab);
                 }
             catch {
                 var decodedNonce="x";
@@ -1042,10 +1043,11 @@ async function tokenValueChanged(event) //{{{
             console.log(decodedNonce);
 
 
-
+            // Send back the decrypted nonce
             let utf8Encode = new TextEncoder();
             var xx = new Uint8Array([0x04, 0x40, 64]);
-            yy = new Uint8Array([1,2,3,4,5]);
+            yy = new Uint8Array(decodedNonce);
+            //for (var i=0; i<32; i++) yy[i] = decodedNonce[i];
             //yy = new Uint8Array(utf8Encode.encode(bufData.slice(bufIndex,bufSize)));
             let zz = new Uint8Array(xx.length + yy.length);
             zz.set(xx);
