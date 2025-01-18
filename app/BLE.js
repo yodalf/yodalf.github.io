@@ -26,6 +26,8 @@ var idCertType = 0;  // 0 = CSR, 1 = IDevID
 var userId = null;
 var userHash = null;
 var userCert = null;
+
+var challenge = new Uint8Array(256);;
 //}}}
 
 //{{{  Connect UI to our functions
@@ -1005,14 +1007,60 @@ async function tokenValueChanged(event) //{{{
 
         } else if (b[0] == 0x80)
         {
+            // Got first 128 bytes of the challenge
+            provState = 4;
+            for (var i = 0; i < 128; i++) challenge[i] = b[i+1];
+            console.log(challenge);
+            accessStatus.textContent = "Challenge";  
+            // Request rest of challenge
+            var xx = new Uint8Array([0x04, 0x30, 240]);
+            let zz = new Uint8Array(xx.length + 240);
+            zz.set(xx);
+            await idChar.writeValue(zz);
+        }
+    }  else if (provState == 4)
+    {
+        // Receive the last challenge bytes
+        let b = new Uint8Array(value.buffer); 
+        if ((b[0] & 0xf0)  == 0x10)
+        {
+            provState =5;
+            for (var i = 128; i < 256; i++) challenge[i] = b[i+1-128];
+            console.log(challenge);
+            
+            // Decrypt challenge and return nonce
+            
+            const priv = await importPrivateKey(localStorage.getItem("ne201_kprv"));
+            try {
+                var c_ab = challenge.buffer;
+                var decodedNonce = new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'RSA-OAEP', }, priv, c_ab));
+                }
+            catch {
+                var decodedNonce="x";
+            }
+
+            console.log(decodedNonce);
+
+
+
+            let utf8Encode = new TextEncoder();
+            var xx = new Uint8Array([0x04, 0x40, 64]);
+            yy = new Uint8Array([1,2,3,4,5]);
+            //yy = new Uint8Array(utf8Encode.encode(bufData.slice(bufIndex,bufSize)));
+            let zz = new Uint8Array(xx.length + yy.length);
+            zz.set(xx);
+            zz.set(yy, xx.length);
+            await idChar.writeValue(zz);
+
+        } else if (b[0] == 0x80)
+        {
             // The end
             provState = 99;
             accessStatus.textContent = "Done";  
             await device.gatt.disconnect();
         }
 
-    }  
-       else
+    }  else
     {
         console.log("TBC...");
         provBuf=null;
