@@ -232,6 +232,7 @@ async function getTicketFromServer(url, user, pwd, idevIdHash, worker, audience,
     if (res.nonce == "" ) return res; 
 
     // We got a challenge ... try to decrypt and send response
+    /*
     const encodedNonce = hexStringToArrayBuffer(res.nonce);
     const encodedKey = hexStringToArrayBuffer(res.key);
     const priv = await importPrivateKey(localStorage.getItem("ne201_kprv"));
@@ -243,14 +244,17 @@ async function getTicketFromServer(url, user, pwd, idevIdHash, worker, audience,
         var decodedKey="x";
         var decodedNonce="x";
     }
+    */
 
     // Send the decoded nonce back for verification
-    obj.response = decodedNonce;
+    //obj.response = decodedNonce;
+    obj.response = "dummy";
     res = await toServer(url, obj);
 
     // Copy back the decoded symmetric key
-    res.key = decodedKey;
+    //res.key = decodedKey;
     
+
     return res;
 }
 //}}}
@@ -1055,6 +1059,12 @@ async function tokenValueChanged(event) //{{{
             await idChar.writeValue(zz);
 
         } 
+        else
+        {
+            provState = 99;
+            accessStatus.textContent = "Done";
+            await device.gatt.disconnect();
+        }
 
     }  else if (provState == 5) {
             // The end
