@@ -184,13 +184,13 @@
 
     <!-- iPre-requisites -->
     <span class="fs-2"><u>PRE-REQUISITES</u><br></span>
-    <span class="fs-5"><br>(1) Worker is provided credentials by the asset owner.<br></span>
-    <span class="fs-5">(2-a) EITHER devices are on-boarded into the asset database via an LDevID <br></span>
+    <span class="fs-5"><br>(1) Worker is provided credentials by the Asset Owner.<br></span>
+    <span class="fs-5">(2-a) EITHER devices are on-boarded into the Asset DB via an LDevID <br></span>
     <span class="fs-5">(2-b) OR devices store the JWT signing authority chain from the JWT token when first accessed after a factory reset.<br></span>
     <br><br>
     <!-- LOGIN -->
-    <span class="fs-2"><u>Access administration (plant premises)</u><br></span>
-    <span class="fs-5"><br>This onboards the worker's mobile in the asset databases.<br></span>
+    <span class="fs-2"><u>Plant premises</u><br></span>
+    <span class="fs-5"><br>This onboards the worker's mobile in the Asset DB.<br></span>
     <span class="fs-5">Should only have to be done once.<br></span>
    
     <div class="row">
@@ -239,7 +239,7 @@
 
     <!-- TICKET -->
     <span class="fs-5"><br>An asset owner requests an "Access Token" for a worker.<br></span>
-    <span class="fs-5">The token is stored in the asset DB for later retrieval by the worker.<br></span>
+    <span class="fs-5">The token is stored in the Asset DB for later retrieval by the worker.<br></span>
     <span class="fs-5">The token is not confidential and can be sent via email to the worker.<br></span>
     <span class="fs-5">For this demo we just copy-paste the token.<br></span>
       <div class="row">
@@ -266,7 +266,7 @@
                             <input type="password" class="form-control" id="ticket_password" required>
                         </div>
                         <div class="mb-3">
-                            <label for="worker" class="form-label">Worker Username (ID)</label>
+                            <label for="worker" class="form-label">Worker Username</label>
                             <input type="text" class="form-control" id="ticket_worker" required>
                         </div>
                         <div class="mb-3">
