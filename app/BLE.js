@@ -223,7 +223,9 @@ async function checkLoginOnServer(url, user, pwd, devIdHash) { //{{{
 //}}}
 async function getTicketFromServer(url, user, pwd, idevIdHash, worker, audience, subject, lifetime) { //{{{
 
-    obj = {usr:user, hash:pwd, idHash:devIdHash, w:worker, aud:audience, sub:subject, life:lifetime, response:""};  
+    //obj = {usr:user, hash:pwd, idHash:devIdHash, w:worker, aud:audience, sub:subject, life:lifetime, response:""};  
+    Audience = stob64(audience);
+    obj = {usr:user, hash:pwd, idHash:devIdHash, w:worker, aud:Audience, sub:subject, life:lifetime, response:""};  
     res = await toServer(url, obj);
 
     // At this point res ishould contain a challenge nonce

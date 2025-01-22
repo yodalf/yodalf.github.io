@@ -25,6 +25,10 @@ DBCERT=$(sqlite3 database.db  "select cert from users where username='$WORKER';"
 #echo $DBCERTHASH
 #echo $DBCERT
 
+#echo $QUERY_STRING
+#echo
+
+#echo $OBJ
 
 # Initiate  a challenge-response
 if [[ -z $RESPONSE ]]; then
